@@ -56,13 +56,13 @@ Use the `go` directive in `go.mod` to determine which row applies to the project
 | 1.23 | Range-over-func iterators; `maps.Insert`, `maps.Collect`; `slices.Collect`; `bytes`/`strings` `*Seq` iterators |
 | 1.24 | `t.Context()` in tests; `strings.SplitSeq` / `FieldsSeq`; `json:",omitzero"` tag; `testing/synctest` (experimental → stable in 1.25) |
 | 1.25 | `sync.WaitGroup.Go()`; `testing/synctest` stable; `runtime/trace.FlightRecorder`; `net/http.CrossOriginProtection`; `go vet` `waitgroup` + `hostport` analyzers |
-| 1.26 | `new(expr)` builtin; `errors.AsType[T]` / `errors.IsType[T]`; `//go:fix inline` directive; `go tool fix` ships all 22 analyzers |
+| 1.26 | `new(expr)` builtin; `errors.AsType[T]`; `//go:fix inline` directive; `go tool fix` ships 22 analyzers |
 
 ---
 
 ## Complete Modernizer Table
 
-All 22 analyzers available in `go tool fix` as of `go1.26.0`. Run `go tool fix -fix ./...` to apply all applicable fixes at once, or `go tool fix -NAME -fix ./...` to apply selectively.
+All 24 entries in the modernizer reference for `go1.26.0`: 22 `go tool fix` analyzers plus 2 modern API migration patterns. Run `go tool fix -fix ./...` to apply all applicable fixes at once, or `go tool fix -NAME -fix ./...` to apply selectively.
 
 ### Type aliases
 
@@ -126,6 +126,13 @@ All 22 analyzers available in `go tool fix` as of `go1.26.0`. Run `go tool fix -
 | Analyzer | Min Go | Replaces | Use instead |
 |----------|--------|---------|-------------|
 | `omitzero` | 1.24 | `json:",omitempty"` on struct-typed fields (has no effect) | `json:",omitzero"` |
+
+### Error handling
+
+| Analyzer | Min Go | Replaces | Use instead |
+|----------|--------|---------|-------------|
+| `errorsjoin` | 1.20 | `strings.Join(errs, "; ")` or manual multi-error concatenation | `errors.Join(errs...)` |
+| `errorsastype` | 1.26 | `var t *T; errors.As(err, &t)` | `errors.AsType[T](err)` |
 
 ### Build tags
 
@@ -570,7 +577,7 @@ func validateAll(fields []Field) error {
 }
 ```
 
-### Type-checked unwrapping — `errors.AsType` / `errors.IsType` (Go 1.26+)
+### Type-checked unwrapping — `errors.AsType` (Go 1.26+)
 
 ```go
 // Before 1.26:
@@ -927,41 +934,15 @@ for i := range n {
 
 ### Manual context in tests → `t.Context()`
 
-```go
-// WRONG:
-ctx, cancel := context.WithCancel(context.Background())
-defer cancel()
-result, err := svc.Call(ctx, req)
-
-// CORRECT (Go 1.24+):
-result, err := svc.Call(t.Context(), req)
-```
+(See "Testing" > "Testing patterns" above)
 
 ### WaitGroup boilerplate → `wg.Go()`
 
-```go
-// WRONG:
-wg.Add(1)
-go func() {
-    defer wg.Done()
-    process(item)
-}()
-
-// CORRECT (Go 1.25+):
-wg.Go(func() {
-    process(item)
-})
-```
+(See "Concurrency Safety" section above for the full `wg.Go()` pattern)
 
 ### `reflect.TypeOf` zero value → `reflect.TypeFor`
 
-```go
-// WRONG:
-t := reflect.TypeOf((*io.Reader)(nil)).Elem()
-
-// CORRECT (Go 1.22+):
-t := reflect.TypeFor[io.Reader]()
-```
+(See "Modernizer Table" > "Reflection" above)
 
 ### Ioutil functions (deprecated since 1.16)
 
