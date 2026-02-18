@@ -1,0 +1,8 @@
+# Coder workflow state (regenerated on each run)
+.coder/state.db
+.coder/state.json
+.coder/workflow-state.json
+.coder/loop-state.json
+.coder/scratchpad.db
+.coder/artifacts/
+.coder/logs/

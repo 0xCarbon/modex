@@ -2,7 +2,7 @@
   "issues": [
     {
       "id": "MODEX-001",
-      "file": "issues/01-core-mcp-server-setup-and-communication.md",
+      "file": "01-core-mcp-server-setup-and-communication.md",
       "title": "Core MCP Server Setup and Communication",
       "priority": "P0",
       "dependsOn": [],
@@ -10,7 +10,7 @@
     },
     {
       "id": "MODEX-010",
-      "file": "issues/10-prompt-development-coding-modern-go-go-1-25-best-practices.md",
+      "file": "10-prompt-development-coding-modern-go-go-1-25-best-practices.md",
       "title": "Prompt Development: coding_modern_go (Go 1.25+ Best Practices)",
       "priority": "P0",
       "dependsOn": [],
@@ -18,7 +18,7 @@
     },
     {
       "id": "MODEX-002",
-      "file": "issues/02-documentation-indexing-with-sqlite-fts5.md",
+      "file": "02-documentation-indexing-with-sqlite-fts5.md",
       "title": "Documentation Indexing with SQLite FTS5",
       "priority": "P0",
       "dependsOn": ["MODEX-001"],
@@ -26,7 +26,7 @@
     },
     {
       "id": "MODEX-004",
-      "file": "issues/04-mcp-tool-get-diagnostics-orchestrator-for-all-diagnostics.md",
+      "file": "04-mcp-tool-get-diagnostics-orchestrator-for-all-diagnostics.md",
       "title": "MCP Tool: get_diagnostics Orchestrator",
       "priority": "P0",
       "dependsOn": ["MODEX-001"],
@@ -34,7 +34,7 @@
     },
     {
       "id": "MODEX-003",
-      "file": "issues/03-mcp-tool-search-docs-implementation.md",
+      "file": "03-mcp-tool-search-docs-implementation.md",
       "title": "MCP Tool: search_docs Implementation",
       "priority": "P0",
       "dependsOn": ["MODEX-001", "MODEX-002"],
@@ -42,7 +42,7 @@
     },
     {
       "id": "MODEX-005",
-      "file": "issues/05-mcp-tool-get-build-diagnostics-compilation-errors-and-vet-warnings.md",
+      "file": "05-mcp-tool-get-build-diagnostics-compilation-errors-and-vet-warnings.md",
       "title": "MCP Tool: get_build_diagnostics",
       "priority": "P1",
       "dependsOn": ["MODEX-001", "MODEX-004"],
@@ -50,7 +50,7 @@
     },
     {
       "id": "MODEX-007",
-      "file": "issues/07-mcp-tool-get-security-diagnostics-vulnerability-scanning.md",
+      "file": "07-mcp-tool-get-security-diagnostics-vulnerability-scanning.md",
       "title": "MCP Tool: get_security_diagnostics",
       "priority": "P1",
       "dependsOn": ["MODEX-001", "MODEX-004"],
@@ -58,7 +58,7 @@
     },
     {
       "id": "MODEX-008",
-      "file": "issues/08-mcp-tool-get-modernize-diagnostics-stale-idiom-detection.md",
+      "file": "08-mcp-tool-get-modernize-diagnostics-stale-idiom-detection.md",
       "title": "MCP Tool: get_modernize_diagnostics",
       "priority": "P1",
       "dependsOn": ["MODEX-001", "MODEX-004"],
@@ -66,7 +66,7 @@
     },
     {
       "id": "MODEX-006",
-      "file": "issues/06-mcp-tool-get-outdated-diagnostics-outdated-dependencies.md",
+      "file": "06-mcp-tool-get-outdated-diagnostics-outdated-dependencies.md",
       "title": "MCP Tool: get_outdated_diagnostics",
       "priority": "P2",
       "dependsOn": ["MODEX-001", "MODEX-004"],
@@ -74,7 +74,7 @@
     },
     {
       "id": "MODEX-009",
-      "file": "issues/09-mcp-tool-apply-modernize-code-transformation.md",
+      "file": "09-mcp-tool-apply-modernize-code-transformation.md",
       "title": "MCP Tool: apply_modernize",
       "priority": "P1",
       "dependsOn": ["MODEX-001", "MODEX-008"],
