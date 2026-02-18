@@ -8,21 +8,38 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
-	"github.com/canesin/modex/internal/server"
+
+	"github.com/0xCarbon/modex/internal/db"
+	"github.com/0xCarbon/modex/internal/server"
 )
 
 func main() {
 	transport := flag.String("transport", "stdio", "transport to use: stdio or http")
 	addr := flag.String("addr", "127.0.0.1:3838", "address to listen on (http transport only)")
+	dbPath := flag.String("db", defaultDBPath(), "path to SQLite database")
 	flag.Parse()
 
 	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, nil)))
 
-	s := server.New()
+	// Ensure DB directory exists.
+	if err := os.MkdirAll(filepath.Dir(*dbPath), 0o755); err != nil {
+		slog.Error("failed to create db directory", "err", err)
+		os.Exit(1)
+	}
+
+	database, err := db.Open(*dbPath)
+	if err != nil {
+		slog.Error("failed to open database", "err", err)
+		os.Exit(1)
+	}
+	defer database.Close()
+
+	s := server.New(database)
 
 	switch *transport {
 	case "stdio":
@@ -33,6 +50,14 @@ func main() {
 		fmt.Fprintf(os.Stderr, "unknown transport %q; use stdio or http\n", *transport)
 		os.Exit(1)
 	}
+}
+
+func defaultDBPath() string {
+	cacheDir, err := os.UserCacheDir()
+	if err != nil {
+		cacheDir = os.TempDir()
+	}
+	return filepath.Join(cacheDir, "modex", "modex.db")
 }
 
 func runStdio(s *mcp.Server) {
