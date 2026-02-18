@@ -1,6 +1,6 @@
 # MODEX-002 - Documentation Indexing with SQLite FTS5
 
-Status: backlog
+Status: done
 Priority: P0
 Tags: Documentation, FTS5, Go, Indexing
 Depends-On: MODEX-001

@@ -17,3 +17,5 @@ PLANREVIEW.md
 
 # Build output
 modex
+# coder workflow artifacts
+.coder/

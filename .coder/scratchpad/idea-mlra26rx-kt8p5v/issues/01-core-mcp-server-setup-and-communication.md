@@ -1,6 +1,6 @@
 # MODEX-001 - Core MCP Server Setup and Communication
 
-Status: backlog
+Status: done
 Priority: P0
 Tags: MCP, Infrastructure, Go
 Depends-On: _none_

@@ -1,6 +1,6 @@
 # MODEX-010 - Prompt Development: coding_modern_go (Go 1.25+ Best Practices)
 
-Status: backlog
+Status: done
 Priority: P0
 Tags: Prompt Engineering, Go, Best Practices, LLM Guidance
 Depends-On: _none_
