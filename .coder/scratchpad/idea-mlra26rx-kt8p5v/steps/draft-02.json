@@ -1,0 +1,783 @@
+{
+  "issues": [
+    {
+      "id": "MODEX-001",
+      "title": "Initialize Core MCP Server with Go SDK",
+      "objective": "Establish the foundational Go project structure and integrate the `github.com/modelcontextprotocol/go-sdk` to create a basic MCP server capable of handling stdio/HTTP/SSE transport.",
+      "problem": "The 'modex' project requires a robust and idiomatic Go-native MCP server foundation to build upon, adhering to Go 1.25+ and the specified SDK.",
+      "changes": [
+        "Create a new Go module (`go mod init`).",
+        "Add `github.com/modelcontextprotocol/go-sdk` as a dependency.",
+        "Implement basic server boilerplate to listen for incoming MCP requests via stdio and HTTP/SSE.",
+        "Define the main application entry point and server startup logic."
+      ],
+      "verification": "Successfully compile the project (`go build`). Start the MCP server and verify it accepts connections via stdio (e.g., by piping a dummy request) and HTTP (e.g., `curl`).",
+      "out_of_scope": [
+        "Implementation of specific MCP tools (e.g., `search_docs`, `get_diagnostics`)."
+      ],
+      "depends_on": [],
+      "priority": "P0",
+      "tags": [
+        "MCP",
+        "Go",
+        "Infrastructure"
+      ],
+      "estimated_effort": "2 days",
+      "acceptance_criteria": [
+        "Go project initializes successfully.",
+        "MCP server starts without errors.",
+        "Server accepts connections via stdio and HTTP/SSE."
+      ],
+      "testing_strategy": {
+        "existing_tests": [],
+        "new_tests": [
+          "TestServerStartup: Verify the server initializes without panics and listens on configured interfaces.",
+          "TestStdioTransport: Send a minimal MCP request over stdio and assert a valid (even if empty) response structure.",
+          "TestHTTPTransport: Send a minimal MCP request over HTTP and assert a valid response structure."
+        ],
+        "test_patterns": "Go's built-in `testing` package; tests in `_test.go` files alongside the implementation."
+      },
+      "research_questions": [
+        "What are the minimal requirements for an MCP server implementation using `go-sdk`?",
+        "How do `cratedex` or other existing MCP servers handle transport layer setup?"
+      ],
+      "risks": [
+        "Complexity in correctly setting up stdio and HTTP/SSE listeners simultaneously.",
+        "Potential issues with `go-sdk` integration if documentation is sparse."
+      ],
+      "notes": "Prioritize a simple, robust server structure that can be easily extended.",
+      "references": [
+        {
+          "source": "github",
+          "title": "go-sdk: The official Go SDK for Model Context Protocol servers and clients.",
+          "url": "https://github.com/modelcontextprotocol/go-sdk",
+          "why": "This is the official Go SDK for MCP, and its usage is a core constraint of the 'modex' project. This repository will be the primary reference for implementing the MCP server and client functionalities."
+        },
+        {
+          "source": "github",
+          "title": "mcp-go: A Go implementation of the Model Context Protocol (MCP).",
+          "url": "https://github.com/mark3labs/mcp-go",
+          "why": "This project provides a concrete example of an MCP server implementation in Go. It can serve as a valuable reference for understanding the architecture and design patterns for building an MCP server using Go."
+        },
+        {
+          "source": "show_hn",
+          "title": "GopherCon 2025 presentation by Katie Hockman, 'Next-Gen AI Tooling with MCP Servers in Go'",
+          "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGNS_RWeViyLDi5Qiz0-vWK6FSB_ejxUSOaEhAg9JO2SmzW0BpRKgc00KD4RHEcuLA3Ti5uzbS8dmg8WrOqEJw-F7V0AjhSir0vixF_8rLrF0EYNqR0vKYSynWyVxCV9Z6hi9hzvZk=",
+          "why": "This GopherCon presentation is a direct and highly relevant resource for understanding how to build MCP servers using the Go SDK. It will likely provide practical guidance, best practices, and potentially code examples for implementing the 'modex' server."
+        }
+      ],
+      "validation": {
+        "mode": "poc",
+        "status": "not_run",
+        "method": "Manual compilation and basic client testing.",
+        "evidence": [],
+        "limitations": []
+      }
+    },
+    {
+      "id": "MODEX-002",
+      "title": "Implement SQLite with FTS5 for Go Documentation Indexing",
+      "objective": "Set up a SQLite database with FTS5 extension to store and enable full-text search for Go standard library and project dependency documentation.",
+      "problem": "LLMs require rapid access to accurate, version-aware Go documentation to avoid version skew and dependency hallucination. A local, indexed source is crucial.",
+      "changes": [
+        "Integrate `github.com/mattn/go-sqlite3` and `github.com/knaka/go-sqlite3-fts5` for SQLite and FTS5 support.",
+        "Define a database schema for storing Go documentation (e.g., package name, symbol, type, documentation text).",
+        "Implement functions to initialize the database and create the FTS5 table.",
+        "Implement functions to populate the database by crawling `go doc` output for stdlib and project dependencies."
+      ],
+      "verification": "Successfully create the database file. Populate the database with a sample of Go documentation. Execute a simple FTS5 query and verify relevant results are returned.",
+      "out_of_scope": [
+        "Advanced search features (e.g., stemming, fuzzy matching) beyond basic FTS5.",
+        "Real-time indexing or update mechanisms; initial indexing is sufficient."
+      ],
+      "depends_on": [
+        "MODEX-001"
+      ],
+      "priority": "P0",
+      "tags": [
+        "Documentation",
+        "Database",
+        "FTS5",
+        "Go"
+      ],
+      "estimated_effort": "3 days",
+      "acceptance_criteria": [
+        "SQLite database with FTS5 extension is created successfully.",
+        "Go documentation (stdlib) is indexed and searchable.",
+        "Basic keyword searches return relevant documentation."
+      ],
+      "testing_strategy": {
+        "existing_tests": [],
+        "new_tests": [
+          "TestDatabaseInitialization: Verify database and FTS5 table creation without errors.",
+          "TestDocumentationIndexing: Index sample Go code documentation and assert the number of indexed entries.",
+          "TestFTS5SearchBasic: Perform simple keyword searches and verify expected documents are returned."
+        ],
+        "test_patterns": "Go's built-in `testing` package; tests in `_test.go` files alongside the implementation."
+      },
+      "research_questions": [
+        "What is the most efficient way to crawl `go doc` output programmatically?",
+        "How can the FTS5 schema be optimized for Go documentation?"
+      ],
+      "risks": [
+        "Performance issues with large documentation sets.",
+        "Complexity in robustly parsing `go doc` output for consistent indexing."
+      ],
+      "notes": "Consider using a background goroutine for initial indexing to avoid blocking the main server thread.",
+      "references": [
+        {
+          "source": "github",
+          "title": "engram: Persistent memory system for AI coding agents. Agent-agnostic Go binary with SQLite + FTS5, MCP server, HTTP API, CLI, and TUI.",
+          "url": "https://github.com/Gentleman-Programming/engram",
+          "why": "Engram is highly relevant as it demonstrates a complete implementation of a persistent memory system for AI agents using SQLite with FTS5 and also functions as an MCP server. This project provides a strong architectural and technical reference for 'modex''s documentation search and indexing component."
+        },
+        {
+          "source": "github",
+          "title": "go-doc-bundler: A Go utility that crawls documentation websites and packages them into an offline bundle with full-text search capabilities.",
+          "url": "https://github.com/BaseMax/go-doc-bundler",
+          "why": "This utility directly addresses the need to crawl and bundle documentation with full-text search. It's a valuable reference for implementing 'modex''s FTS5 index for Go documentation (stdlib + dependencies) and integrating with `go doc`."
+        },
+        {
+          "source": "github",
+          "title": "go-sqlite3-fts5: Importing this package will enable the FTS5 extension with github.com/mattn/go-sqlite3 package.",
+          "url": "https://github.com/knaka/go-sqlite3-fts5",
+          "why": "This package is a critical technical dependency for enabling FTS5 with the `github.com/mattn/go-sqlite3` library in Go. It directly supports the constraint of using SQLite with FTS5 for documentation storage and search."
+        },
+        {
+          "source": "show_hn",
+          "title": "Real-Time Full-Text Site Search with SQLite FTS5 extension",
+          "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEbgovk9k-9nj4MirOvhXujAfM5XEnA9QEXgMOSnNY40UAYXCyQrwYuUAcz00HifhFNPMa5YcQygfvpDUUeNFFXSdC0nORA32OsQ_kDhPoRbKlkt2MJrO2ZurCcbpThr6dbyLraxxCt2g==",
+          "why": "This Hacker News discussion highlights the practical application and efficiency of SQLite's FTS5 for full-text search. It provides valuable context on its capabilities and potential deployment strategies, which are relevant for designing and implementing 'modex''s documentation search."
+        }
+      ],
+      "validation": {
+        "mode": "poc",
+        "status": "not_run",
+        "method": "Execute database creation, indexing, and manual FTS5 queries.",
+        "evidence": [],
+        "limitations": []
+      }
+    },
+    {
+      "id": "MODEX-003",
+      "title": "Implement MCP Tool: `register_project`",
+      "objective": "Develop the `register_project` MCP tool to allow an LLM client to register a Go project with the 'modex' server, enabling context-aware operations.",
+      "problem": "The 'modex' server needs to understand the context of the user's Go project (e.g., `go.mod` location, Go version) to provide accurate, version-aware diagnostics and documentation.",
+      "changes": [
+        "Define the `register_project` MCP request and response structures using the `go-sdk`.",
+        "Implement the handler for `register_project` that accepts the project root path.",
+        "The handler should read the `go.mod` file to extract module paths and target Go version.",
+        "Store the project context internally for subsequent tool calls."
+      ],
+      "verification": "Call `register_project` with a valid Go project path. Verify that the server successfully parses `go.mod` and stores the project information.",
+      "out_of_scope": [
+        "Deep parsing of `go.mod` for advanced features beyond basic module and Go version.",
+        "Automatic project detection without explicit registration."
+      ],
+      "depends_on": [
+        "MODEX-001"
+      ],
+      "priority": "P1",
+      "tags": [
+        "MCP",
+        "ProjectContext",
+        "Go"
+      ],
+      "estimated_effort": "1 day",
+      "acceptance_criteria": [
+        "Server successfully registers a Go project.",
+        "Project's `go.mod` information is accurately extracted.",
+        "Project context is available for other MCP tool calls."
+      ],
+      "testing_strategy": {
+        "existing_tests": [],
+        "new_tests": [
+          "TestRegisterProjectValid: Register a dummy Go project and assert that its `go.mod` info is correctly extracted and stored.",
+          "TestRegisterProjectInvalidPath: Attempt to register a non-existent path and verify error handling.",
+          "TestRegisterProjectNoGoMod: Attempt to register a path without a `go.mod` and verify appropriate error or default handling."
+        ],
+        "test_patterns": "Go's built-in `testing` package."
+      },
+      "research_questions": [
+        "What is the best practice for storing project context within an MCP server?"
+      ],
+      "risks": [
+        "Errors in parsing `go.mod` for complex projects."
+      ],
+      "notes": "Ensure robust error handling for `go.mod` parsing.",
+      "references": [
+        {
+          "source": "github",
+          "title": "go-sdk: The official Go SDK for Model Context Protocol servers and clients.",
+          "url": "https://github.com/modelcontextprotocol/go-sdk",
+          "why": "This is the official Go SDK for MCP, and its usage is a core constraint of the 'modex' project. This repository will be the primary reference for implementing the MCP server and client functionalities."
+        },
+        {
+          "source": "show_hn",
+          "title": "Inspecting the Source of Go Modules",
+          "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFIHUclbBte8Uogf0r7BQWcMJxggci-eC7RgvRuav1E_5u1vu4s-llzk8_Vs_fCPfvqGMvUEDyvndlXdj3bMFPRVvxVdGIw4BIkP802bXHlTPNtTpi_gA4SZ9skImI39RMW5wE1pjhE",
+          "why": "This Hacker News discussion delves into the intricacies of Go module source verification and how Go manages package sources. This information is crucial for 'modex' to accurately perform version-aware analysis and detect instances of dependency hallucination."
+        }
+      ],
+      "validation": {
+        "mode": "poc",
+        "status": "not_run",
+        "method": "Call the MCP tool with various project configurations and verify server state.",
+        "evidence": [],
+        "limitations": []
+      }
+    },
+    {
+      "id": "MODEX-004",
+      "title": "Implement MCP Tool: `get_go_version_info`",
+      "objective": "Develop the `get_go_version_info` MCP tool to provide detailed Go version information for the registered project, ensuring version-aware analysis.",
+      "problem": "LLMs often exhibit version skew, denying the existence of newer Go APIs. The server needs to inform LLMs about the active Go version.",
+      "changes": [
+        "Define the `get_go_version_info` MCP request and response structures.",
+        "Implement the handler to retrieve the Go version from the currently registered project (from `go.mod`) and the system's `go` executable.",
+        "Return structured information including major, minor, patch versions, and potentially build tags."
+      ],
+      "verification": "Call `get_go_version_info` after `register_project`. Verify that the returned version information matches the `go.mod` of the registered project and the system's Go installation.",
+      "out_of_scope": [
+        "Automatic Go toolchain management or installation."
+      ],
+      "depends_on": [
+        "MODEX-001",
+        "MODEX-003"
+      ],
+      "priority": "P1",
+      "tags": [
+        "MCP",
+        "GoVersion",
+        "Diagnostics"
+      ],
+      "estimated_effort": "1 day",
+      "acceptance_criteria": [
+        "Tool returns accurate Go version from `go.mod`.",
+        "Tool returns accurate Go toolchain version.",
+        "Response is structured and easily parsable."
+      ],
+      "testing_strategy": {
+        "existing_tests": [],
+        "new_tests": [
+          "TestGetGoVersionInfo: Call the tool and assert that the returned version matches the expected Go version (e.g., from `runtime.Version()` and `go.mod`).",
+          "TestGetGoVersionInfoNoProject: Verify behavior when no project is registered."
+        ],
+        "test_patterns": "Go's built-in `testing` package."
+      },
+      "research_questions": [
+        "What are all relevant ways to determine the active Go version for a project and system?"
+      ],
+      "risks": [
+        "Inconsistencies between `go.mod` and installed Go toolchain."
+      ],
+      "notes": "Prioritize reporting the `go.mod` version, as it defines the project's target.",
+      "references": [
+        {
+          "source": "github",
+          "title": "go-sdk: The official Go SDK for Model Context Protocol servers and clients.",
+          "url": "https://github.com/modelcontextprotocol/go-sdk",
+          "why": "This is the official Go SDK for MCP, and its usage is a core constraint of the 'modex' project. This repository will be the primary reference for implementing the MCP server and client functionalities."
+        },
+        {
+          "source": "show_hn",
+          "title": "Go Modules Overview and Usage",
+          "url": "https://mend.io/resources/blog/go-modules-a-comprehensive-guide/",
+          "why": "This overview provides fundamental knowledge about Go Modules, including the structure of `go.mod` and `go.sum` files, and the usage of commands like `go get` and `go list -m all`. This is essential for 'modex' to correctly interpret project dependencies and provide relevant diagnostics."
+        }
+      ],
+      "validation": {
+        "mode": "poc",
+        "status": "not_run",
+        "method": "Call the MCP tool and compare output against known Go versions.",
+        "evidence": [],
+        "limitations": []
+      }
+    },
+    {
+      "id": "MODEX-005",
+      "title": "Implement MCP Tool: `get_build_diagnostics`",
+      "objective": "Develop the `get_build_diagnostics` MCP tool to report compilation errors and warnings from `go build` for the registered project.",
+      "problem": "LLMs frequently generate Go code with compilation blockers. The server needs to provide clear, actionable build diagnostics.",
+      "changes": [
+        "Define the `get_build_diagnostics` MCP request and response structures.",
+        "Implement the handler to execute `go build ./...` (or similar) in the registered project's directory.",
+        "Implement robust parsing of `go build` output to extract file paths, line numbers, and error messages in a structured format."
+      ],
+      "verification": "Create a Go file with a deliberate compilation error. Call `get_build_diagnostics` and verify that the correct error message, file, and line number are returned. Remove the error and verify no diagnostics are returned.",
+      "out_of_scope": [
+        "Fixing build errors; this tool only reports them.",
+        "Extensive linting beyond what `go build` naturally reports."
+      ],
+      "depends_on": [
+        "MODEX-001",
+        "MODEX-003"
+      ],
+      "priority": "P0",
+      "tags": [
+        "MCP",
+        "Diagnostics",
+        "Go",
+        "Build"
+      ],
+      "estimated_effort": "2 days",
+      "acceptance_criteria": [
+        "Tool accurately identifies and reports build errors.",
+        "Parsed diagnostics include file, line number, and error message.",
+        "No false positives on clean builds."
+      ],
+      "testing_strategy": {
+        "existing_tests": [],
+        "new_tests": [
+          "TestBuildErrorParsing: Create temporary Go files with various syntax errors, type errors, and missing imports. Run `go build` via the handler and assert the parsed diagnostics match expected structured output (file, line, message).",
+          "TestCleanBuild: Run on a valid Go project and assert no diagnostics are returned.",
+          "TestLargeBuildOutput: Test parsing performance and correctness with a large number of simulated build errors."
+        ],
+        "test_patterns": "Go's built-in `testing` package."
+      },
+      "research_questions": [
+        "What are the most robust methods for parsing `go build` output across different Go versions and error formats?",
+        "Can `go/packages` or `go/build` libraries provide more structured build information directly?"
+      ],
+      "risks": [
+        "Fragile parsing of `go build` output leading to inaccurate diagnostics.",
+        "Performance overhead for large projects with many files."
+      ],
+      "notes": "Investigate `go list -json` with `-e` or `go/packages` for more programmatic and robust access to build information instead of solely parsing `stderr`.",
+      "references": [
+        {
+          "source": "github",
+          "title": "golangci-lint: Fast linters runner for Go",
+          "url": "https://github.com/golangci/golangci-lint",
+          "why": "golangci-lint aggregates multiple Go linters and is a standard tool for Go code quality. Understanding its architecture and how it integrates various linters can inform the design of 'modex''s `get_diagnostics` tool and its integration with existing Go tooling, including robust output parsing strategies."
+        },
+        {
+          "source": "github",
+          "title": "go-tools (Staticcheck): The advanced Go linter",
+          "url": "https://github.com/dominikh/go-tools",
+          "why": "Staticcheck is a leading Go linter that provides extensive static analysis capabilities. Its codebase offers deep insight into how to implement various diagnostic checks and integrate with the Go ecosystem for code analysis, including effectively parsing `go build` and `go vet` outputs."
+        }
+      ],
+      "validation": {
+        "mode": "poc",
+        "status": "not_run",
+        "method": "Introduce known build errors into a test project and verify reported diagnostics.",
+        "evidence": [],
+        "limitations": []
+      }
+    },
+    {
+      "id": "MODEX-006",
+      "title": "Implement MCP Tool: `get_outdated_diagnostics`",
+      "objective": "Develop the `get_outdated_diagnostics` MCP tool to identify and report outdated direct and indirect dependencies for the registered Go project.",
+      "problem": "LLMs can hallucinate non-existent Go packages or use outdated dependencies. The server needs to provide insights into dependency freshness.",
+      "changes": [
+        "Define the `get_outdated_diagnostics` MCP request and response structures.",
+        "Implement the handler to utilize `go list -u -m all` or similar `go` commands to detect outdated modules.",
+        "Parse the output to identify modules with available newer versions (major, minor, patch updates).",
+        "Return structured information about outdated dependencies, including current version, latest version, and path."
+      ],
+      "verification": "Create a dummy Go project with an outdated dependency. Call `get_outdated_diagnostics` and verify that the outdated module is correctly identified. Update the dependency and verify no outdated diagnostics are returned.",
+      "out_of_scope": [
+        "Automatic updating of dependencies.",
+        "Detailed analysis of dependency tree conflicts."
+      ],
+      "depends_on": [
+        "MODEX-001",
+        "MODEX-003"
+      ],
+      "priority": "P1",
+      "tags": [
+        "MCP",
+        "Diagnostics",
+        "Dependencies",
+        "Go"
+      ],
+      "estimated_effort": "2 days",
+      "acceptance_criteria": [
+        "Tool accurately reports outdated direct dependencies.",
+        "Tool accurately reports outdated indirect dependencies.",
+        "No false positives on up-to-date projects."
+      ],
+      "testing_strategy": {
+        "existing_tests": [],
+        "new_tests": [
+          "TestOutdatedDirectDependency: Create a project with a direct outdated dependency and verify detection.",
+          "TestOutdatedIndirectDependency: Create a project where an indirect dependency is outdated and verify detection.",
+          "TestNoOutdatedDependencies: Run on an up-to-date project and assert no diagnostics."
+        ],
+        "test_patterns": "Go's built-in `testing` package."
+      },
+      "research_questions": [
+        "What are the best flags for `go list` to get comprehensive and parsable outdated dependency information?"
+      ],
+      "risks": [
+        "Incomplete detection of outdated dependencies.",
+        "Parsing `go list` output might be fragile."
+      ],
+      "notes": "Ensure the output clearly distinguishes between major, minor, and patch updates.",
+      "references": [
+        {
+          "source": "github",
+          "title": "gomod: Go modules analysis tool.",
+          "url": "https://github.com/Helcaraxan/gomod",
+          "why": "This project provides a dedicated tool for analyzing Go modules. It's a valuable reference for implementing 'modex''s `list_modules` tool and for gathering information about module dependencies to address issues like dependency hallucination and outdated dependencies."
+        },
+        {
+          "source": "github",
+          "title": "depgraph: Go module dependency graph analysis tool.",
+          "url": "https://github.com/ldemailly/depgraph",
+          "why": "Depgraph helps visualize and analyze the dependency graph of Go modules. Understanding its approach can inform how 'modex' analyzes and presents dependency information, which is crucial for identifying and addressing dependency-related problems for LLMs."
+        },
+        {
+          "source": "show_hn",
+          "title": "Go Modules Overview and Usage",
+          "url": "https://mend.io/resources/blog/go-modules-a-comprehensive-guide/",
+          "why": "This overview provides fundamental knowledge about Go Modules, including the structure of `go.mod` and `go.sum` files, and the usage of commands like `go get` and `go list -m all`. This is essential for 'modex' to correctly interpret project dependencies and provide relevant diagnostics."
+        }
+      ],
+      "validation": {
+        "mode": "poc",
+        "status": "not_run",
+        "method": "Use a test project with controlled outdated dependencies and verify output.",
+        "evidence": [],
+        "limitations": []
+      }
+    },
+    {
+      "id": "MODEX-007",
+      "title": "Implement MCP Tool: `get_security_diagnostics`",
+      "objective": "Develop the `get_security_diagnostics` MCP tool to detect and report security vulnerabilities in the registered Go project using `govulncheck`.",
+      "problem": "LLM-generated code might contain dependencies with known security vulnerabilities. The server must proactively flag these.",
+      "changes": [
+        "Define the `get_security_diagnostics` MCP request and response structures.",
+        "Implement the handler to execute `govulncheck ./...` in the registered project's directory.",
+        "Parse `govulncheck` output to extract structured information about identified vulnerabilities (e.g., package, module, vulnerability ID, affected versions, explanation).",
+        "Return a list of security vulnerability diagnostics."
+      ],
+      "verification": "Create a Go project that imports a library with a known, reachable vulnerability (e.g., an older version of a common library). Call `get_security_diagnostics` and verify the vulnerability is reported. Update the vulnerable dependency or remove the affected code and verify no diagnostics are returned.",
+      "out_of_scope": [
+        "Automatic remediation of security vulnerabilities.",
+        "Reporting on vulnerabilities in custom code (only dependencies are covered by `govulncheck`)."
+      ],
+      "depends_on": [
+        "MODEX-001",
+        "MODEX-003"
+      ],
+      "priority": "P0",
+      "tags": [
+        "MCP",
+        "Diagnostics",
+        "Security",
+        "Go"
+      ],
+      "estimated_effort": "2 days",
+      "acceptance_criteria": [
+        "Tool accurately identifies and reports security vulnerabilities via `govulncheck`.",
+        "Parsed vulnerability information is structured and comprehensive.",
+        "Tool reports 'no vulnerabilities found' on clean projects."
+      ],
+      "testing_strategy": {
+        "existing_tests": [],
+        "new_tests": [
+          "TestVulnerableDependencyDetection: Create a dummy project with a known vulnerable dependency and verify `govulncheck` output is parsed correctly.",
+          "TestNoVulnerabilities: Run on a clean project and assert no diagnostics.",
+          "TestUnreachableVulnerability: Create a project with a vulnerable dependency that isn't actively used (to verify `govulncheck`'s reachability analysis)."
+        ],
+        "test_patterns": "Go's built-in `testing` package."
+      },
+      "research_questions": [
+        "What are the best practices for integrating `govulncheck` into automated pipelines?",
+        "How can `govulncheck`'s output be best presented to LLMs for actionable insights?"
+      ],
+      "risks": [
+        "Misinterpretation of `govulncheck` output leading to false positives/negatives.",
+        "Performance impact of running `govulncheck` on large codebases."
+      ],
+      "notes": "Ensure `govulncheck` is run with appropriate flags for the registered project's modules.",
+      "references": [
+        {
+          "source": "github",
+          "title": "osv-scanner: Vulnerability scanner written in Go which uses the data provided by https://osv.dev",
+          "url": "https://github.com/google/osv-scanner",
+          "why": "OSV-Scanner is an official Google project for vulnerability scanning in Go, directly addressing 'modex''s requirement for security vulnerability checks. Its integration with osv.dev provides a robust and up-to-date source of vulnerability information, crucial for `get_security_diagnostics`."
+        },
+        {
+          "source": "github",
+          "title": "gokart: A static analysis tool for securing Go code",
+          "url": "https://github.com/praetorian-inc/gokart",
+          "why": "Gokart is a dedicated static analysis tool for securing Go code, directly aligning with 'modex''s need to provide security diagnostics. Its approach to identifying security flaws can inform the implementation of `get_security_diagnostics`."
+        },
+        {
+          "source": "show_hn",
+          "title": "`govulncheck` overview and discussions",
+          "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQELClqkAxxtzKHpMxKyJoZ2VBWZr3amvkq7bu8_cEJynxXJLHux4dWuVWX4Ml2Iq3pav69POFEvOeb8tC6EJumr05109-O1s1_F4s-XBCb9IVl0kwRynz1XvvqwqHAUQXIP9iJ6OS7T1A==",
+          "why": "The detailed discussions around `govulncheck` on Hacker News provide crucial insights into its reachability analysis and low-noise reporting. This information is directly applicable to implementing 'modex''s `get_security_diagnostics` to be highly effective and useful for LLMs."
+        }
+      ],
+      "validation": {
+        "mode": "poc",
+        "status": "not_run",
+        "method": "Create a vulnerable Go project and verify `govulncheck` detection.",
+        "evidence": [],
+        "limitations": []
+      }
+    },
+    {
+      "id": "MODEX-008",
+      "title": "Implement MCP Tool: `get_modernize_diagnostics`",
+      "objective": "Develop the `get_modernize_diagnostics` MCP tool to identify opportunities to modernize Go code based on current best practices and newer Go features (Go 1.25+).",
+      "problem": "LLMs often produce Go code with stale idioms. The server should guide LLMs towards modern Go patterns.",
+      "changes": [
+        "Define the `get_modernize_diagnostics` MCP request and response structures.",
+        "Implement the handler to integrate with `go fix -diff` or leverage the `go/analysis` framework with custom analyzers to detect modernization opportunities (e.g., `slog` adoption, `slices` package usage, `context.WithoutCancel`).",
+        "Parse the output to provide structured recommendations."
+      ],
+      "verification": "Create a Go file with code that can be modernized (e.g., `for i := 0; i < len(slice); i++` instead of `for range slice`). Call `get_modernize_diagnostics` and verify the modernization suggestion is returned. Apply the modernization and verify no diagnostics are returned.",
+      "out_of_scope": [
+        "Automatic application of modernization changes (this is handled by `apply_modernize` tool).",
+        "Detecting all possible modernization opportunities; focus on common and impactful ones."
+      ],
+      "depends_on": [
+        "MODEX-001",
+        "MODEX-003"
+      ],
+      "priority": "P1",
+      "tags": [
+        "MCP",
+        "Diagnostics",
+        "Modernization",
+        "Go"
+      ],
+      "estimated_effort": "3 days",
+      "acceptance_criteria": [
+        "Tool accurately detects common modernization opportunities.",
+        "Recommendations are structured and clear.",
+        "No false positives on modern Go code."
+      ],
+      "testing_strategy": {
+        "existing_tests": [],
+        "new_tests": [
+          "TestDetectLegacyLoop: Detect a traditional `for` loop that can be replaced by `for range`.",
+          "TestDetectOutdatedContext: Detect uses of `context.Background()` where `context.WithoutCancel()` might be more appropriate.",
+          "TestModernCodeNoDiagnostics: Run on a Go 1.25+ idiomatic code and assert no diagnostics."
+        ],
+        "test_patterns": "Go's built-in `testing` package."
+      },
+      "research_questions": [
+        "What are the most impactful Go 1.25+ features and idioms that LLMs commonly miss?",
+        "How can `go/analysis` be used to implement custom modernization checks effectively?"
+      ],
+      "risks": [
+        "Detecting too many low-value suggestions, leading to noise for LLMs.",
+        "Difficulty in distinguishing truly stale idioms from valid alternatives."
+      ],
+      "notes": "Leverage existing tools like `go vet` and `go fix` first, then explore custom `go/analysis` for more advanced checks.",
+      "references": [
+        {
+          "source": "github",
+          "title": "gopatch: Refactoring and code transformation tool for Go.",
+          "url": "https://github.com/uber-go/gopatch",
+          "why": "Gopatch is a powerful code transformation tool for Go, directly relevant to 'modex''s goal of integrating with `go fix` to apply code modernization transformations. Its design and implementation provide a strong reference for programmatic code manipulation in Go."
+        },
+        {
+          "source": "github",
+          "title": "moderngo: Custom ruleguard rules for modernizing Go code to Go 1.20-1.25+ features",
+          "url": "https://github.com/tphakala/moderngo",
+          "why": "This project provides concrete examples of `ruleguard` rules for modernizing Go code to newer language features (Go 1.20-1.25+). This is directly applicable to developing the 'coding_modern_go' prompt and the `get_modernize_diagnostics` tool, ensuring LLMs are guided towards up-to-date Go idioms."
+        },
+        {
+          "source": "github",
+          "title": "example-gomodernize: Go code examples demonstrating various patterns that can be automatically modernized using the modernize analyzer in Go 1.24+.",
+          "url": "https://github.com/blck-snwmn/example-gomodernize",
+          "why": "This repository offers practical Go code examples that can be automatically modernized. These examples are invaluable for testing and validating the `get_modernize_diagnostics` and `apply_modernize` tools within 'modex', and for training LLMs on specific modernization patterns."
+        },
+        {
+          "source": "show_hn",
+          "title": "Using go fix to modernize Go code",
+          "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEfPCa5wpA2c-Wg2zlL3ceX6Wpnbu50NhnQXDEhjceyFmtCUvL13B2rLFCN_2UlWFmALBMAYnnfrv1gcadRkRNXYZySUpRa4E9cAhUSg-5IL85dxY4Iaes7POb_ZhPPII7Y4-RIxLNe",
+          "why": "This Hacker News discussion directly addresses the use of `go fix` for modernizing Go code, especially in the context of LLMs generating outdated code. It underscores the critical need for 'modex' to provide accurate and version-aware modernization guidance."
+        }
+      ],
+      "validation": {
+        "mode": "poc",
+        "status": "not_run",
+        "method": "Test with Go code samples containing specific outdated patterns.",
+        "evidence": [],
+        "limitations": []
+      }
+    },
+    {
+      "id": "MODEX-009",
+      "title": "Refactor MCP Tool: `get_diagnostics` (Orchestrator)",
+      "objective": "Refactor `get_diagnostics` to orchestrate calls to `get_build_diagnostics`, `get_outdated_diagnostics`, `get_security_diagnostics`, and `get_modernize_diagnostics`, aggregating and presenting their results.",
+      "problem": "The original definition of `get_diagnostics` had unclear sequencing and overlap with specific diagnostic tools. It needs to act as a consolidated entry point for all diagnostics, as per feedback.",
+      "changes": [
+        "Define the `get_diagnostics` MCP request and response structures, designed to contain aggregated results from various diagnostic types.",
+        "Implement the handler for `get_diagnostics`.",
+        "The handler will call the specific diagnostic tools (MODEX-005, -006, -007, -008) sequentially or in parallel.",
+        "Aggregate the results from each specific diagnostic tool into a single, comprehensive response.",
+        "Implement clear categorization and presentation of diagnostic messages (e.g., build errors, security warnings, modernization suggestions)."
+      ],
+      "verification": "Trigger various diagnostic conditions (build errors, outdated dependencies, security vulns, modernization opportunities). Call `get_diagnostics` and verify that all triggered diagnostics from the underlying tools are correctly collected and presented in the aggregated response.",
+      "out_of_scope": [
+        "Implementing new diagnostic types; this tool focuses on orchestration.",
+        "Complex prioritization or filtering of diagnostic results (initial implementation should aggregate all)."
+      ],
+      "depends_on": [
+        "MODEX-001",
+        "MODEX-005",
+        "MODEX-006",
+        "MODEX-007",
+        "MODEX-008"
+      ],
+      "priority": "P0",
+      "tags": [
+        "MCP",
+        "Orchestration",
+        "Diagnostics",
+        "Go"
+      ],
+      "estimated_effort": "2 days",
+      "acceptance_criteria": [
+        "All underlying diagnostic tools are successfully invoked.",
+        "Results from all diagnostic tools are correctly aggregated.",
+        "Aggregated response is well-structured and easy to interpret by LLMs."
+      ],
+      "testing_strategy": {
+        "existing_tests": [],
+        "new_tests": [
+          "TestAggregateAllDiagnostics: Create a project with conditions that trigger all types of diagnostics (build, outdated, security, modernize). Call `get_diagnostics` and verify the aggregated response contains all expected diagnostics.",
+          "TestEmptyDiagnostics: Run on a perfectly clean project and assert the aggregated response is empty.",
+          "TestPartialDiagnostics: Trigger only one type of diagnostic (e.g., build errors) and ensure only those are present in the aggregated response."
+        ],
+        "test_patterns": "Go's built-in `testing` package."
+      },
+      "research_questions": [
+        "What is the optimal strategy for parallelizing diagnostic tool calls while ensuring resource efficiency?",
+        "How should diagnostic results be best merged and deduplicated if overlaps occur?"
+      ],
+      "risks": [
+        "Performance degradation if diagnostic calls are not efficiently managed.",
+        "Complexities in merging and categorizing diverse diagnostic outputs."
+      ],
+      "notes": "This issue directly addresses feedback regarding MODEX-004's scope. It must *orchestrate* rather than *implement* new diagnostic logic.",
+      "references": [
+        {
+          "source": "github",
+          "title": "agent-blackboard: Multi-agent coordination system for software engineering with 9 specialized AI agents - Documentation, API Design, Backend Architecture, Java/Go Development, DDD, and Observability",
+          "url": "https://github.com/claudioed/agent-blackboard",
+          "why": "This project demonstrates a multi-agent system with specialized AI agents, including one for Go Development. It provides insights into how different agents can be coordinated to address various software engineering tasks, which can inform the design of 'modex' as an MCP server with distinct capabilities."
+        },
+        {
+          "source": "github",
+          "title": "goose: An open source, extensible AI agent that goes beyond code suggestions - install, execute, edit, and test with any LLM.",
+          "url": "https://github.com/block/goose",
+          "why": "Goose is a relevant example of an AI agent that interacts with LLMs to perform various software development tasks, including executing, editing, and testing code. Its extensible nature and use of MCP are highly relevant to the 'modex' project's goals of enhancing LLM capabilities in Go."
+        },
+        {
+          "source": "github",
+          "title": "go-sdk: The official Go SDK for Model Context Protocol servers and clients.",
+          "url": "https://github.com/modelcontextprotocol/go-sdk",
+          "why": "This is the official Go SDK for MCP, and its usage is a core constraint of the 'modex' project. This repository will be the primary reference for implementing the MCP server and client functionalities."
+        }
+      ],
+      "validation": {
+        "mode": "poc",
+        "status": "not_run",
+        "method": "Execute `get_diagnostics` on projects with various known issues and verify aggregated output.",
+        "evidence": [],
+        "limitations": []
+      }
+    },
+    {
+      "id": "MODEX-010",
+      "title": "Implement MCP Tool: `search_docs`",
+      "objective": "Develop the `search_docs` MCP tool to allow LLMs to perform full-text searches against the indexed Go documentation.",
+      "problem": "LLMs need to quickly find relevant Go documentation snippets to generate correct, idiomatic code and avoid hallucinating APIs.",
+      "changes": [
+        "Define the `search_docs` MCP request and response structures (e.g., query string, optional filters).",
+        "Implement the handler for `search_docs` to query the SQLite FTS5 index (established in MODEX-002).",
+        "Return relevant documentation snippets, potentially with context or ranking, based on the search query."
+      ],
+      "verification": "Populate the documentation index with various Go stdlib and dependency docs. Call `search_docs` with specific keywords (e.g., \"context.WithTimeout\", \"WaitGroup\"). Verify that relevant documentation entries are returned and ranked appropriately.",
+      "out_of_scope": [
+        "Sophisticated natural language processing (NLP) for queries; focus on keyword and phrase matching.",
+        "Dynamic updates to the documentation index; assumes periodic indexing."
+      ],
+      "depends_on": [
+        "MODEX-001",
+        "MODEX-002"
+      ],
+      "priority": "P0",
+      "tags": [
+        "MCP",
+        "Documentation",
+        "Search",
+        "Go"
+      ],
+      "estimated_effort": "2 days",
+      "acceptance_criteria": [
+        "Tool returns relevant documentation based on keyword queries.",
+        "Search results are ranked by relevance (FTS5 default ranking is acceptable).",
+        "Response includes documentation content and source (e.g., package, symbol)."
+      ],
+      "testing_strategy": {
+        "existing_tests": [],
+        "new_tests": [
+          "TestKeywordSearch: Search for common Go keywords (e.g., 'goroutine', 'channel') and assert relevant results are returned.",
+          "TestPhraseSearch: Search for exact phrases (e.g., 'http.Server') and verify precision.",
+          "TestNoMatchSearch: Search for a non-existent term and assert no results are returned.",
+          "TestSearchRanking: Verify basic relevance ranking by searching for a term present in multiple documents and checking the order."
+        ],
+        "test_patterns": "Go's built-in `testing` package."
+      },
+      "research_questions": [
+        "How can FTS5 ranking be fine-tuned for Go documentation?",
+        "What metadata should be returned with each search result to be most useful for LLMs?"
+      ],
+      "risks": [
+        "Irrelevant search results if indexing or query formulation is poor.",
+        "Performance bottlenecks for very broad searches on large indices."
+      ],
+      "notes": "Ensure the search results are concise and directly address the LLM's query.",
+      "references": [
+        {
+          "source": "github",
+          "title": "engram: Persistent memory system for AI coding agents. Agent-agnostic Go binary with SQLite + FTS5, MCP server, HTTP API, CLI, and TUI.",
+          "url": "https://github.com/Gentleman-Programming/engram",
+          "why": "Engram is highly relevant as it demonstrates a complete implementation of a persistent memory system for AI agents using SQLite with FTS5 and also functions as an MCP server. This project provides a strong architectural and technical reference for 'modex''s documentation search and indexing component."
+        },
+        {
+          "source": "github",
+          "title": "go-doc-bundler: A Go utility that crawls documentation websites and packages them into an offline bundle with full-text search capabilities.",
+          "url": "https://github.com/BaseMax/go-doc-bundler",
+          "why": "This utility directly addresses the need to crawl and bundle documentation with full-text search. It's a valuable reference for implementing 'modex''s FTS5 index for Go documentation (stdlib + dependencies) and integrating with `go doc`."
+        },
+        {
+          "source": "show_hn",
+          "title": "Real-Time Full-Text Site Search with SQLite FTS5 extension",
+          "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEbgovk9k-9nj4MirOvhXujAfM5XEnA9QEXgMOSnNY40UAYXCyQrwYuUAcz00HifhFNPMa5YcQygfvpDUUeNFFXSdC0nORA32OsQ_kDhPoRbKlkt2MJrO2ZurCcbpThr6dbyLraxxCt2g==",
+          "why": "This Hacker News discussion highlights the practical application and efficiency of SQLite's FTS5 for full-text search. It provides valuable context on its capabilities and potential deployment strategies, which are relevant for designing and implementing 'modex''s documentation search."
+        }
+      ],
+      "validation": {
+        "mode": "poc",
+        "status": "not_run",
+        "method": "Perform various search queries against the indexed documentation and verify results.",
+        "evidence": [],
+        "limitations": []
+      }
+    }
+  ],
+  "assumptions": [
+    "The Go programming environment (go1.25.6) is consistently available for executing `go` commands.",
+    "The `go-sdk` provides stable and well-documented APIs for MCP server implementation.",
+    "The `go.mod` file is the primary source of truth for a project's Go version and dependencies."
+  ],
+  "open_questions": [
+    "What specific Go 1.25+ features should be prioritized for modernization diagnostics?",
+    "How will the 'coding_modern_go' prompt be integrated and updated with new Go idioms?",
+    "What is the expected latency for each diagnostic tool, and how will it impact the overall `get_diagnostics` response time?"
+  ]
+}

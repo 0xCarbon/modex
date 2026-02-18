@@ -1,0 +1,152 @@
+{
+  "tracks": [
+    {
+      "id": "V1-LLM-Assistance",
+      "topic": "Large Language Model (LLM) assistance in software development",
+      "mode": "poc",
+      "tool_preference": [
+        "none"
+      ],
+      "procedure": [
+        "Clone 'https://github.com/google/adk-go'.",
+        "Examine the project structure to understand its Go-native MCP server implementation and LLM integration patterns.",
+        "Clone 'https://github.com/block/goose'.",
+        "Investigate how 'goose' utilizes MCP and interacts with LLMs for code execution, editing, and testing.",
+        "Clone 'https://github.com/doITmagic/rag-code-mcp'.",
+        "Analyze its semantic code navigation and RAG implementation relevant to Go."
+      ],
+      "success_signal": "Identification of common Go-native MCP server patterns, LLM integration strategies, and agent building architectures from at least two reference projects.",
+      "fallback": "Analyze READMEs and documentation of the referenced repositories if direct code analysis is too complex or time-consuming."
+    },
+    {
+      "id": "V2-Go-Tooling",
+      "topic": "Go programming language development",
+      "mode": "poc",
+      "tool_preference": [
+        "run_shell_command"
+      ],
+      "procedure": [
+        "Create a minimal Go project with intentional compilation errors (e.g., missing imports, type mismatches), linting violations (e.g., unused variables), a potential nil panic scenario, and an outdated idiom (e.g., pre-Go 1.18 `ioutil.ReadAll`).",
+        "Run 'go vet ./...' on the project and record warnings.",
+        "Run 'go fix ./...' on the project and observe transformations, recording any changes.",
+        "Attempt to run 'govulncheck ./...' on a project with a known vulnerable dependency (if feasible, otherwise note the expected output from documentation).",
+        "If Staticcheck or golangci-lint are locally available or easily containerized, run them against the project and record diagnostics."
+      ],
+      "success_signal": "Successful execution of 'go vet' and 'go fix', and observation of expected diagnostics/modernizations. Demonstration of basic static analysis capabilities using native Go tools.",
+      "fallback": "Focus on analyzing the documentation and reported features of each Go tool (go vet, go fix, govulncheck, Staticcheck, golangci-lint) to understand their diagnostic capabilities and output formats."
+    },
+    {
+      "id": "V3-MCP-Server-GoSDK",
+      "topic": "Model Context Protocol (MCP) server development",
+      "mode": "poc",
+      "tool_preference": [
+        "none"
+      ],
+      "procedure": [
+        "Explore the official 'https://github.com/modelcontextprotocol/go-sdk' repository to understand its API and usage for server implementation.",
+        "Review the core interfaces and types for MCP tools and resources within the Go SDK.",
+        "Examine 'https://github.com/mark3labs/mcp-go' and 'https://github.com/mark3labs/mcp-filesystem-server' as concrete examples of Go MCP server implementations using the SDK.",
+        "Identify common patterns for handling stdio and HTTP/SSE communication within these implementations."
+      ],
+      "success_signal": "Clear understanding of how to use the 'go-sdk' to define and implement MCP tools and resources, and familiarity with common Go-native MCP server architectures.",
+      "fallback": "If direct code review is too time-consuming, prioritize understanding the architectural overview and usage examples provided in the READMEs and documentation of the referenced SDKs and projects."
+    },
+    {
+      "id": "V4-Code-StaticAnalysis",
+      "topic": "Code analysis and static analysis",
+      "mode": "poc",
+      "tool_preference": [
+        "run_shell_command"
+      ],
+      "procedure": [
+        "Create Go code snippets that demonstrate various diagnostic categories: potential nil panics, incorrect concurrency patterns, and security-sensitive functions.",
+        "If 'uber-go/nilaway' is available (or can be easily run via Docker), execute it on a nil-panic prone snippet and record the output.",
+        "If 'praetorian-inc/gokart' is available, execute it on a security-sensitive snippet and record findings.",
+        "Analyze the output formats and error reporting mechanisms of these specialized static analysis tools."
+      ],
+      "success_signal": "Demonstrated execution of at least one specialized static analysis tool (e.g., Nilaway, Gokart) on a targeted Go code snippet, with observable and understandable diagnostic output.",
+      "fallback": "Review the documentation and example output for 'uber-go/nilaway' and 'praetorian-inc/gokart' to understand their capabilities and typical diagnostic messages."
+    },
+    {
+      "id": "V5-Docs-SearchIndexing",
+      "topic": "Documentation search and indexing",
+      "mode": "poc",
+      "tool_preference": [
+        "run_shell_command"
+      ],
+      "procedure": [
+        "Set up a minimal SQLite database with the FTS5 extension enabled using 'github.com/mattn/go-sqlite3' and 'github.com/knaka/go-sqlite3-fts5' in a Go program.",
+        "Ingest a small amount of sample Go documentation (e.g., from a specific standard library package) into the FTS5 table.",
+        "Perform basic full-text search queries against the indexed documentation and verify results.",
+        "Review the implementations of 'Gentleman-Programming/engram' and 'harperreed/chronicle' for their FTS5 usage patterns and indexing strategies."
+      ],
+      "success_signal": "Successful creation of a searchable FTS5 index for Go documentation using SQLite in a Go program, and accurate retrieval of information via search queries.",
+      "fallback": "If programmatic FTS5 setup is complex, focus on understanding the FTS5 documentation and reviewing the architectural diagrams/explanations of 'engram' and 'chronicle' for their search and indexing components."
+    },
+    {
+      "id": "V6-Code-Modernization",
+      "topic": "Code modernization and refactoring",
+      "mode": "poc",
+      "tool_preference": [
+        "run_shell_command"
+      ],
+      "procedure": [
+        "Obtain or create Go code examples that can be modernized by 'go fix' or specific `go/analysis` analyzers (e.g., from 'blck-snwmn/example-gomodernize').",
+        "Run 'go fix' on these examples and verify that the code is modernized correctly.",
+        "Investigate the usage of `go/analysis` within the Go ecosystem by examining tools like 'uber-go/gopatch' or custom linters in 'tphakala/moderngo' to understand programmatic code transformation."
+      ],
+      "success_signal": "Demonstrated use of 'go fix' to modernize Go code, and a conceptual understanding of programmatic code transformation using `go/analysis`.",
+      "fallback": "Analyze the 'go fix' documentation and review code examples that illustrate common modernization transformations. Study the `ruleguard` rules in 'tphakala/moderngo' for detailed modernization patterns."
+    },
+    {
+      "id": "V7-Go-Concurrency",
+      "topic": "Concurrency in Go",
+      "mode": "poc",
+      "tool_preference": [
+        "run_shell_command"
+      ],
+      "procedure": [
+        "Create a Go program with intentional concurrency issues: a deadlock (e.g., incorrect WaitGroup usage or channel deadlock) and a goroutine leak (e.g., unhandled goroutine in a test).",
+        "Run 'go test -race' on the program to detect race conditions.",
+        "If 'sasha-s/go-deadlock' or 'rleungx/leakcheck' are available (or can be easily integrated), run them on the problematic code and observe their detection capabilities.",
+        "Review the 'go-concurrency-guide' and 'go-concurrency-patterns' for best practices and common pitfalls in Go concurrency."
+      ],
+      "success_signal": "Successful reproduction and detection of common Go concurrency bugs (e.g., race conditions, deadlocks, goroutine leaks) using native Go tools and specialized analyzers.",
+      "fallback": "Focus on understanding concurrency patterns and common bugs from the provided guides ('go-concurrency-guide', 'go-concurrency-patterns') if direct tool integration is too complex."
+    },
+    {
+      "id": "V8-Software-Security",
+      "topic": "Software security analysis",
+      "mode": "poc",
+      "tool_preference": [
+        "run_shell_command"
+      ],
+      "procedure": [
+        "Identify a small Go project with known security vulnerabilities in its dependencies (e.g., by searching CVE databases or using a deliberately vulnerable dependency).",
+        "Run 'govulncheck ./...' on this project and record the vulnerability report.",
+        "If 'google/osv-scanner' is available, run it on the project and compare its output with 'govulncheck'.",
+        "Review the methodology of 'praetorian-inc/gokart' for identifying static security flaws in Go code."
+      ],
+      "success_signal": "Successful detection of security vulnerabilities in a Go project using 'govulncheck' or 'osv-scanner', and understanding of their reporting mechanisms.",
+      "fallback": "Analyze the documentation and example reports from 'govulncheck' and 'osv-scanner' to understand their capabilities and how they present security vulnerabilities."
+    },
+    {
+      "id": "V9-Dependency-Management",
+      "topic": "Dependency management",
+      "mode": "poc",
+      "tool_preference": [
+        "run_shell_command"
+      ],
+      "procedure": [
+        "Create a Go project with a 'go.mod' file that includes several dependencies, some of which are intentionally outdated or non-existent (to simulate hallucination).",
+        "Use 'go mod tidy' to resolve and clean up dependencies, observing any changes to 'go.mod' and 'go.sum'.",
+        "Run 'go list -m all' to inspect the full list of direct and transitive dependencies and their versions.",
+        "Use 'go mod graph' to visualize the dependency graph.",
+        "Review the features of 'Helcaraxan/gomod' and 'ldemailly/depgraph' for advanced module analysis."
+      ],
+      "success_signal": "Comprehensive understanding of Go module management, including dependency resolution, listing, and graphing using native 'go mod' commands, and a conceptual understanding of advanced analysis tools.",
+      "fallback": "Consult the official Go Modules documentation for 'go mod' commands and review examples of dependency graphing and listing."
+    }
+  ],
+  "notes": "The validation plan is structured into nine tracks, each corresponding to a problem space or key topic identified in the analysis brief and references. Each track outlines a Proof-of-Concept (POC) procedure to validate the core concepts, tools, or libraries. The tool preference 'none' for some tracks indicates that the primary activity will be code review and conceptual understanding rather than direct tool execution. The 'fallback' provides an alternative approach if the primary procedure proves too complex or time-consuming."
+}

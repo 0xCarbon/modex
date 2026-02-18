@@ -1,0 +1,119 @@
+{
+  "problem_spaces": [
+    {
+      "name": "Large Language Model (LLM) assistance in software development",
+      "description": "The 'modex' project aims to enhance LLM capabilities in writing modern, idiomatic Go code by creating an MCP server. This addresses LLM failure modes like compilation issues, concurrency bugs, version skew, dependency hallucination, and stale idioms by providing indexed documentation, comprehensive diagnostics, and version-aware modernization guidance.",
+      "signals": [
+        "LLMs generate Go code with compilation blockers (missing imports, incorrect assignments, test package misuse).",
+        "LLMs often introduce concurrency bugs (WaitGroup misuse, deadlocks, goroutine leaks).",
+        "LLMs exhibit version skew, denying the existence of newer Go APIs.",
+        "LLMs hallucinate non-existent Go packages (dependency hallucination).",
+        "LLMs produce Go code with stale idioms, resisting modern patterns even when directed.",
+        "Develop 'modex' as an MCP server for LLM-assisted Go development.",
+        "Create a 'coding_modern_go' prompt to guide LLMs on modern Go idioms, features, and best practices.",
+        "Defensively address known LLM failure modes in Go code generation."
+      ]
+    },
+    {
+      "name": "Go programming language development",
+      "description": "The 'modex' project focuses on improving Go code quality and development experience, specifically for LLM-generated code. It involves integrating with Go tooling for diagnostics, modernization, and documentation.",
+      "signals": [
+        "LLMs generate Go code with compilation blockers (missing imports, incorrect assignments, test package misuse).",
+        "LLMs often introduce concurrency bugs (WaitGroup misuse, deadlocks, goroutine leaks).",
+        "LLMs exhibit version skew, denying the existence of newer Go APIs.",
+        "LLMs hallucinate non-existent Go packages (dependency hallucination).",
+        "LLMs produce Go code with stale idioms, resisting modern patterns even when directed.",
+        "Develop 'modex' as an MCP server for LLM-assisted Go development.",
+        "Implement a full-text search (FTS5) index for Go documentation (stdlib + dependencies).",
+        "Provide comprehensive diagnostics, including build errors, vet warnings, lint issues, outdated dependencies, security vulnerabilities, and modernization opportunities.",
+        "Integrate with `go fix` to analyze and apply code modernization transformations.",
+        "Create a 'coding_modern_go' prompt to guide LLMs on modern Go idioms, features, and best practices.",
+        "Ensure all recommendations and analyses are version-aware, respecting the project's `go.mod` file."
+      ]
+    },
+    {
+      "name": "Model Context Protocol (MCP) server development",
+      "description": "The project involves creating an MCP server named 'modex' for Go, similar to 'cratedex' for Rust. This server will provide LLMs with structured Go-specific context and capabilities.",
+      "signals": [
+        "Develop 'modex' as an MCP server for LLM-assisted Go development.",
+        "Utilize the `github.com/modelcontextprotocol/go-sdk` for MCP server implementation.",
+        "Support stdio and HTTP/SSE for communication transport.",
+        "Adopt a Go-native architecture, potentially inspired by 'cratedex' but adapted for Go.",
+        "Analyze existing Go MCP servers (godoc-mcp, gopls MCP, mcp-gopls, go-dev-mcp, mcp-language-server) to identify specific features to replicate or improve upon in 'modex'."
+      ]
+    },
+    {
+      "name": "Code analysis and static analysis",
+      "description": "The project will implement various static analysis capabilities for Go code, including build diagnostics, linting, security vulnerability checks, and identifying modernization opportunities.",
+      "signals": [
+        "Provide comprehensive diagnostics, including build errors, vet warnings, lint issues, outdated dependencies, security vulnerabilities, and modernization opportunities.",
+        "Integrate with `go fix` to analyze and apply code modernization transformations.",
+        "Integrate with existing Go tooling: `go doc`, `go vet`, `go fix`, `go list`, `gopls`, `govulncheck`.",
+        "Utilize `go/analysis` framework."
+      ]
+    },
+    {
+      "name": "Documentation search and indexing",
+      "description": "A core component of 'modex' is the implementation of a full-text search (FTS5) index for Go documentation, covering both the standard library and project dependencies.",
+      "signals": [
+        "Implement a full-text search (FTS5) index for Go documentation (stdlib + dependencies).",
+        "Employ SQLite with FTS5 for documentation storage and search.",
+        "Integrate with `go doc`."
+      ]
+    },
+    {
+      "name": "Code modernization and refactoring",
+      "description": "The project aims to provide guidance and tools for modernizing Go code, including integration with `go fix` and addressing stale idioms often generated by LLMs.",
+      "signals": [
+        "LLMs produce Go code with stale idioms, resisting modern patterns even when directed.",
+        "Integrate with `go fix` to analyze and apply code modernization transformations.",
+        "Create a 'coding_modern_go' prompt to guide LLMs on modern Go idioms, features, and best practices."
+      ]
+    },
+    {
+      "name": "Concurrency in Go",
+      "description": "A specific focus is placed on addressing and preventing common concurrency bugs introduced by LLMs in Go code.",
+      "signals": [
+        "LLMs often introduce concurrency bugs (WaitGroup misuse, deadlocks, goroutine leaks)."
+      ]
+    },
+    {
+      "name": "Software security analysis",
+      "description": "The 'modex' server will include capabilities for detecting security vulnerabilities in Go code, likely through integration with tools like `govulncheck`.",
+      "signals": [
+        "Provide comprehensive diagnostics, including security vulnerabilities.",
+        "Integrate with `govulncheck`."
+      ]
+    },
+    {
+      "name": "Dependency management",
+      "description": "The project will address issues related to Go dependency management, such as hallucinated dependencies and outdated modules, ensuring version-aware analysis.",
+      "signals": [
+        "LLMs hallucinate non-existent Go packages (dependency hallucination).",
+        "Provide comprehensive diagnostics, including outdated dependencies.",
+        "Ensure all recommendations and analyses are version-aware, respecting the project's `go.mod` file.",
+        "Integrate with `go list`."
+      ]
+    }
+  ],
+  "constraints": [
+    "Target Go version 1.25+.",
+    "Utilize the `github.com/modelcontextprotocol/go-sdk` for MCP server implementation.",
+    "Support stdio and HTTP/SSE for communication transport.",
+    "Employ SQLite with FTS5 for documentation storage and search.",
+    "Integrate with existing Go tooling: `go doc`, `go vet`, `go fix`, `go list`, `gopls`, `govulncheck`.",
+    "Adopt a Go-native architecture, potentially inspired by 'cratedex' but adapted for Go.",
+    "Development environment includes go1.25.6."
+  ],
+  "suspected_work_types": [
+    "mixed"
+  ],
+  "priority_signals": [
+    "Define and implement the proposed MCP tools: `register_project`, `search_docs`, `get_diagnostics`, `get_build_diagnostics`, `get_outdated_diagnostics`, `get_security_diagnostics`, `get_modernize_diagnostics`, `apply_modernize`, `get_go_version_info`, and `list_modules`.",
+    "Develop the `coding_modern_go` prompt content, covering Go 1.25/1.26 features, modern idioms, blessed packages, and common mistakes.",
+    "Set up the core technical stack: Go 1.25+ project, integrate the `go-sdk`, and establish SQLite with FTS5 for documentation indexing.",
+    "Design and implement the integration points for `go fix` analysis and application, either programmatically via `go/analysis` or by shelling out.",
+    "Analyze existing Go MCP servers (godoc-mcp, gopls MCP, mcp-gopls, go-dev-mcp, mcp-language-server) to identify specific features to replicate or improve upon in 'modex'."
+  ],
+  "unknowns": []
+}
