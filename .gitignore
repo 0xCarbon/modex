@@ -6,4 +6,14 @@
 .coder/scratchpad.db
 .coder/artifacts/
 .coder/logs/
+.coder/scratchpad/local-*.md
+ISSUE.md
+PLAN.md
+PLANREVIEW.md
+
+# Gemini / AI tool config
 .gemini/
+.geminiignore
+
+# Build output
+modex
