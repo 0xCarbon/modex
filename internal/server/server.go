@@ -23,6 +23,7 @@ const (
 	defaultRateLimitPerSecond   = 3 * 10
 	defaultRateLimitBurst       = defaultRateLimitPerSecond
 	defaultMaxConcurrentRequest = 1 << 6
+	defaultMaxProjects          = 32
 )
 
 // App holds server-wide state including the database and registered projects.
@@ -103,6 +104,10 @@ func (app *App) registerProjectHandler(_ context.Context, _ *mcp.CallToolRequest
 		return toolJSON("project already registered", snap), nil, nil
 	}
 
+	if len(app.projects) >= defaultMaxProjects {
+		return toolError("max registered projects (%d) reached", defaultMaxProjects), nil, nil
+	}
+
 	// Create and launch indexer.
 	idx := docs.NewIndexer(app.DB, absPath)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -144,6 +149,44 @@ func (app *App) getIndexStatusHandler(_ context.Context, _ *mcp.CallToolRequest,
 	return toolJSON("index status", snap), nil, nil
 }
 
+type reindexProjectArgs struct {
+	ProjectPath string `json:"project_path"`
+}
+
+func (app *App) reindexProjectHandler(_ context.Context, _ *mcp.CallToolRequest, args reindexProjectArgs) (*mcp.CallToolResult, any, error) {
+	absPath, err := filepath.Abs(args.ProjectPath)
+	if err != nil {
+		return toolError("invalid path: %v", err), nil, nil
+	}
+
+	app.mu.Lock()
+	defer app.mu.Unlock()
+
+	ps, ok := app.projects[absPath]
+	if !ok {
+		return toolError("project not registered: %s", absPath), nil, nil
+	}
+
+	// Cancel existing indexer and replace with a fresh one.
+	ps.Cancel()
+	idx := docs.NewIndexer(app.DB, absPath)
+	ctx, cancel := context.WithCancel(context.Background())
+	app.projects[absPath] = &ProjectState{
+		Path:    absPath,
+		Indexer: idx,
+		Cancel:  cancel,
+	}
+
+	go func() {
+		if err := idx.Run(ctx); err != nil {
+			slog.Error("reindexer failed", "project", absPath, "err", err)
+		}
+	}()
+
+	snap := idx.Progress()
+	return toolJSON("project reindexing started", snap), nil, nil
+}
+
 // New returns a configured MCP server with rate limiting, concurrency limiting,
 // and documentation indexing tools.
 func New(database *db.DB) *mcp.Server {
@@ -176,6 +219,11 @@ func New(database *db.DB) *mcp.Server {
 		Name:        "get_index_status",
 		Description: "Get indexing progress for a registered Go project. Returns phase, total/indexed/skipped/failed counts.",
 	}, app.getIndexStatusHandler)
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "reindex_project",
+		Description: "Restart indexing for an already-registered Go project. Cancels any in-progress indexing and starts a fresh run.",
+	}, app.reindexProjectHandler)
 
 	return s
 }
