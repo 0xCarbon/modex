@@ -37,7 +37,7 @@ modex gives the model a local, searchable index of real documentation — the sa
 
 ## Installation
 
-**Prerequisites:** Go 1.25+
+**Prerequisites:** Go 1.26+ (modex uses `go fix` modernizers added in 1.26; it can index projects built with any Go version)
 
 ```bash
 go install github.com/0xCarbon/modex/cmd/modex@latest
