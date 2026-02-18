@@ -64,6 +64,12 @@ Use the `go` directive in `go.mod` to determine which row applies to the project
 
 All 22 analyzers available in `go tool fix` as of `go1.26.0`. Run `go tool fix -fix ./...` to apply all applicable fixes at once, or `go tool fix -NAME -fix ./...` to apply selectively.
 
+### Type aliases
+
+| Analyzer | Min Go | Replaces | Use instead |
+|----------|--------|---------|-------------|
+| `any` | 1.18 | `interface{}` | `any` |
+
 ### String operations
 
 | Analyzer | Min Go | Replaces | Use instead |
