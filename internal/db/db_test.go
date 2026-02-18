@@ -163,3 +163,51 @@ func TestDeleteByHash(t *testing.T) {
 		t.Errorf("remaining %d rows, want 1", count)
 	}
 }
+
+func TestSearch(t *testing.T) {
+	d := openTestDB(t)
+
+	inserts := []struct{ pkg, hash, name, kind, sig, doc string }{
+		{"fmt", "hash-fmt", "Println", "Function", "func Println(a ...any) (n int, err error)", "Println formats using default formats"},
+		{"os", "hash-os", "Exit", "Function", "func Exit(code int)", "Exit causes the program to exit with code"},
+	}
+	for _, r := range inserts {
+		_, err := d.Exec(
+			`INSERT INTO docs (package_path, package_hash, item_name, kind, signature, doc_text) VALUES (?, ?, ?, ?, ?, ?)`,
+			r.pkg, r.hash, r.name, r.kind, r.sig, r.doc,
+		)
+		if err != nil {
+			t.Fatalf("INSERT %s: %v", r.name, err)
+		}
+	}
+
+	items, err := d.Search("Println", 10)
+	if err != nil {
+		t.Fatalf("Search Println: %v", err)
+	}
+	if len(items) != 1 {
+		t.Fatalf("Search Println: got %d results, want 1", len(items))
+	}
+	if items[0].ItemName != "Println" {
+		t.Errorf("Search Println: got %q, want Println", items[0].ItemName)
+	}
+
+	items, err = d.Search("Exit", 10)
+	if err != nil {
+		t.Fatalf("Search Exit: %v", err)
+	}
+	if len(items) != 1 {
+		t.Fatalf("Search Exit: got %d results, want 1", len(items))
+	}
+	if items[0].ItemName != "Exit" {
+		t.Errorf("Search Exit: got %q, want Exit", items[0].ItemName)
+	}
+
+	items, err = d.Search("nonexistent_xyzzy", 10)
+	if err != nil {
+		t.Fatalf("Search nonexistent: %v", err)
+	}
+	if len(items) != 0 {
+		t.Errorf("Search nonexistent: got %d results, want 0", len(items))
+	}
+}

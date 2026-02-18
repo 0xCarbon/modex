@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -243,6 +244,7 @@ func TestToolsRegistered(t *testing.T) {
 		"get_index_status": false,
 		"reindex_project":  false,
 		"get_diagnostics":  false,
+		"search_docs":      false,
 	}
 	for _, tool := range res.Tools {
 		if _, ok := want[tool.Name]; ok {
@@ -291,5 +293,59 @@ func TestGetDiagnosticsEmptyPath(t *testing.T) {
 	}
 	if !res.IsError {
 		t.Fatal("expected error for empty project_path")
+	}
+}
+
+func newServerWithDB(t *testing.T) (*mcp.Server, *db.DB) {
+	t.Helper()
+	d := openTestDB(t)
+	return server.New(d), d
+}
+
+func TestSearchDocsTool(t *testing.T) {
+	s, d := newServerWithDB(t)
+
+	_, err := d.Exec(
+		`INSERT INTO docs (package_path, package_hash, item_name, kind, signature, doc_text)
+		 VALUES ('fmt', 'hash-fmt', 'Println', 'Function', 'func Println(a ...any) (n int, err error)', 'Println formats using default formats')`,
+	)
+	if err != nil {
+		t.Fatalf("INSERT: %v", err)
+	}
+
+	cs, cleanup := connect(t, s)
+	defer cleanup()
+
+	res, err := cs.CallTool(context.Background(), &mcp.CallToolParams{
+		Name:      "search_docs",
+		Arguments: map[string]any{"query": "Println"},
+	})
+	if err != nil {
+		t.Fatalf("CallTool search_docs: %v", err)
+	}
+	if res.IsError {
+		t.Fatalf("search_docs returned error: %v", res.Content)
+	}
+	if len(res.Content) == 0 {
+		t.Fatal("search_docs returned no content")
+	}
+	text, ok := res.Content[0].(*mcp.TextContent)
+	if !ok {
+		t.Fatalf("expected *mcp.TextContent, got %T", res.Content[0])
+	}
+	if !strings.Contains(text.Text, "Println") {
+		t.Errorf("response text does not contain Println: %s", text.Text)
+	}
+
+	// Empty query must return an error.
+	res, err = cs.CallTool(context.Background(), &mcp.CallToolParams{
+		Name:      "search_docs",
+		Arguments: map[string]any{"query": ""},
+	})
+	if err != nil {
+		t.Fatalf("CallTool empty query: %v", err)
+	}
+	if !res.IsError {
+		t.Fatal("expected error for empty query")
 	}
 }

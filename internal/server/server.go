@@ -188,6 +188,22 @@ func (app *App) reindexProjectHandler(_ context.Context, _ *mcp.CallToolRequest,
 	return toolJSON("project reindexing started", snap), nil, nil
 }
 
+type searchDocsArgs struct {
+	Query string `json:"query"`
+	Limit int    `json:"limit,omitempty"`
+}
+
+func (app *App) searchDocsHandler(_ context.Context, _ *mcp.CallToolRequest, args searchDocsArgs) (*mcp.CallToolResult, any, error) {
+	if strings.TrimSpace(args.Query) == "" {
+		return toolError("query is required"), nil, nil
+	}
+	items, err := app.DB.Search(args.Query, args.Limit)
+	if err != nil {
+		return toolError("search failed: %v", err), nil, nil
+	}
+	return toolJSON("search results", items), nil, nil
+}
+
 type getDiagnosticsArgs struct {
 	ProjectPath string                  `json:"project_path"`
 	Categories  []diagnostics.Category  `json:"categories,omitempty"`
@@ -253,6 +269,11 @@ func New(database *db.DB) *mcp.Server {
 		Name:        "get_diagnostics",
 		Description: "Run diagnostic checks on a Go project. Accepts an optional list of categories (build, outdated, security, modernize); defaults to all categories.",
 	}, app.getDiagnosticsHandler)
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "search_docs",
+		Description: "Search indexed Go documentation using full-text search. Returns matching packages, types, and functions with their signatures and docstrings.",
+	}, app.searchDocsHandler)
 
 	return s
 }
