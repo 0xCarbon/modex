@@ -16,6 +16,7 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/0xCarbon/modex/internal/db"
+	"github.com/0xCarbon/modex/internal/diagnostics"
 	"github.com/0xCarbon/modex/internal/docs"
 )
 
@@ -187,6 +188,29 @@ func (app *App) reindexProjectHandler(_ context.Context, _ *mcp.CallToolRequest,
 	return toolJSON("project reindexing started", snap), nil, nil
 }
 
+type getDiagnosticsArgs struct {
+	ProjectPath string                  `json:"project_path"`
+	Categories  []diagnostics.Category  `json:"categories,omitempty"`
+}
+
+func (app *App) getDiagnosticsHandler(ctx context.Context, _ *mcp.CallToolRequest, args getDiagnosticsArgs) (*mcp.CallToolResult, any, error) {
+	if strings.TrimSpace(args.ProjectPath) == "" {
+		return toolError("project_path is required"), nil, nil
+	}
+
+	absPath, err := filepath.Abs(args.ProjectPath)
+	if err != nil {
+		return toolError("invalid path: %v", err), nil, nil
+	}
+
+	orch := &diagnostics.Orchestrator{ProjectPath: absPath}
+	diags, err := orch.Run(ctx, args.Categories)
+	if err != nil {
+		return toolError("diagnostics failed: %v", err), nil, nil
+	}
+	return toolJSON("diagnostics", diags), nil, nil
+}
+
 // New returns a configured MCP server with rate limiting, concurrency limiting,
 // and documentation indexing tools.
 func New(database *db.DB) *mcp.Server {
@@ -224,6 +248,11 @@ func New(database *db.DB) *mcp.Server {
 		Name:        "reindex_project",
 		Description: "Restart indexing for an already-registered Go project. Cancels any in-progress indexing and starts a fresh run.",
 	}, app.reindexProjectHandler)
+
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        "get_diagnostics",
+		Description: "Run diagnostic checks on a Go project. Accepts an optional list of categories (build, outdated, security, modernize); defaults to all categories.",
+	}, app.getDiagnosticsHandler)
 
 	return s
 }

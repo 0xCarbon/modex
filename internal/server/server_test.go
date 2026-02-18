@@ -241,6 +241,8 @@ func TestToolsRegistered(t *testing.T) {
 		"ping":             false,
 		"register_project": false,
 		"get_index_status": false,
+		"reindex_project":  false,
+		"get_diagnostics":  false,
 	}
 	for _, tool := range res.Tools {
 		if _, ok := want[tool.Name]; ok {
@@ -251,5 +253,43 @@ func TestToolsRegistered(t *testing.T) {
 		if !found {
 			t.Errorf("tool %q not registered", name)
 		}
+	}
+}
+
+func TestGetDiagnosticsToolExecutes(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module testmod\n\ngo 1.26\n"), 0o644)
+
+	cs, cleanup := connect(t, newServer(t))
+	defer cleanup()
+
+	res, err := cs.CallTool(context.Background(), &mcp.CallToolParams{
+		Name:      "get_diagnostics",
+		Arguments: map[string]any{"project_path": dir},
+	})
+	if err != nil {
+		t.Fatalf("CallTool: %v", err)
+	}
+	if res.IsError {
+		t.Fatalf("get_diagnostics returned error: %v", res.Content)
+	}
+	if len(res.Content) == 0 {
+		t.Fatal("get_diagnostics returned no content")
+	}
+}
+
+func TestGetDiagnosticsEmptyPath(t *testing.T) {
+	cs, cleanup := connect(t, newServer(t))
+	defer cleanup()
+
+	res, err := cs.CallTool(context.Background(), &mcp.CallToolParams{
+		Name:      "get_diagnostics",
+		Arguments: map[string]any{"project_path": ""},
+	})
+	if err != nil {
+		t.Fatalf("CallTool: %v", err)
+	}
+	if !res.IsError {
+		t.Fatal("expected error for empty project_path")
 	}
 }
