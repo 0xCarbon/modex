@@ -31,3 +31,17 @@ func TestOutdatedParseJSONNoUpdates(t *testing.T) {
 		t.Fatalf("expected 0, got %d", len(diags))
 	}
 }
+
+func TestOutdatedParseJSONStopsOnMalformedRecord(t *testing.T) {
+	input := strings.TrimSpace(`{"Path":"github.com/foo/bar","Version":"v1.0.0","Update":{"Path":"github.com/foo/bar","Version":"v1.1.0"}}
+not-json
+{"Path":"github.com/after/error","Version":"v2.0.0","Update":{"Path":"github.com/after/error","Version":"v2.1.0"}}`)
+
+	diags := parseOutdatedJSON(input)
+	if len(diags) != 1 {
+		t.Fatalf("expected 1 diagnostic before malformed record, got %d", len(diags))
+	}
+	if !strings.Contains(diags[0].Message, "github.com/foo/bar") {
+		t.Fatalf("unexpected diagnostic: %#v", diags[0])
+	}
+}

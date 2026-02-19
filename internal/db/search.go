@@ -128,16 +128,43 @@ func textQuery(q string) string {
 	return strings.Join(escaped, " AND ")
 }
 
-// symbolQuery handles "pkg.Symbol" and "Type.Method" patterns.
-// "fmt.Println" → item_name:Println AND package_path:fmt*
-// "io.Reader"   → item_name:Reader AND package_path:io*
-// "Println"     → item_name:Println*
+// symbolQuery handles symbol-like patterns with optional package and parent type.
+// "fmt.Println"                  → item_name:Println AND package_path:fmt*
+// "bytes.Buffer.Write"           → item_name:Write AND parent_name:Buffer AND package_path:bytes*
+// "github.com/org/pkg.Func"      → item_name:Func AND package_path:github.com/org/pkg*
+// "github.com/org/pkg.Type.Func" → item_name:Func AND parent_name:Type AND package_path:github.com/org/pkg*
+// "Println"                      → item_name:Println*
 func symbolQuery(q string) string {
-	// Strip leading import-path segments to get "pkg.Symbol" at minimum.
-	pkg, sym, hasDot := strings.Cut(q, ".")
-	if !hasDot {
-		// No dot: treat as item name prefix.
+	dot := strings.LastIndex(q, ".")
+	if dot < 0 {
 		return "item_name:" + ftsEscape(q) + "*"
+	}
+
+	left := q[:dot]
+	sym := q[dot+1:]
+	if sym == "" || strings.Contains(sym, "/") {
+		return "package_path:" + ftsEscape(q) + "*"
+	}
+
+	pkg := left
+	parent := ""
+	if innerDot := strings.LastIndex(left, "."); innerDot >= 0 {
+		if slash := strings.LastIndex(left, "/"); slash >= 0 {
+			// For import paths with dotted domains, only split parent/type after the
+			// final slash: github.com/org/pkg.Type → pkg=github.com/org/pkg, parent=Type
+			if innerDot > slash {
+				pkg = left[:innerDot]
+				parent = left[innerDot+1:]
+			}
+		} else {
+			pkg = left[:innerDot]
+			parent = left[innerDot+1:]
+		}
+	}
+
+	if parent != "" {
+		return fmt.Sprintf("item_name:%s* AND parent_name:%s* AND package_path:%s*",
+			ftsEscape(sym), ftsEscape(parent), ftsEscape(pkg))
 	}
 	return fmt.Sprintf("item_name:%s* AND package_path:%s*",
 		ftsEscape(sym), ftsEscape(pkg))

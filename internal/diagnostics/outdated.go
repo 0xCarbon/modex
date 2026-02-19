@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"strings"
 )
 
@@ -25,10 +26,13 @@ func (o *Orchestrator) runOutdated(ctx context.Context) ([]Diagnostic, error) {
 func parseOutdatedJSON(output string) []Diagnostic {
 	var diags []Diagnostic
 	dec := json.NewDecoder(strings.NewReader(output))
-	for dec.More() {
+	for {
 		var mod moduleInfo
 		if err := dec.Decode(&mod); err != nil {
-			continue
+			if err == io.EOF {
+				break
+			}
+			break
 		}
 		if mod.Update == nil {
 			continue

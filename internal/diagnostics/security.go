@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"os/exec"
 	"strings"
 )
@@ -36,12 +37,19 @@ func (o *Orchestrator) runSecurity(ctx context.Context) ([]Diagnostic, error) {
 		return nil, err
 	}
 
+	return parseGovulncheckJSON(out), nil
+}
+
+func parseGovulncheckJSON(output string) []Diagnostic {
 	var diags []Diagnostic
-	dec := json.NewDecoder(strings.NewReader(out))
-	for dec.More() {
+	dec := json.NewDecoder(strings.NewReader(output))
+	for {
 		var msg govulncheckMessage
 		if err := dec.Decode(&msg); err != nil {
-			continue
+			if err == io.EOF {
+				break
+			}
+			break
 		}
 		if msg.Type != "Finding" {
 			continue
@@ -62,5 +70,5 @@ func (o *Orchestrator) runSecurity(ctx context.Context) ([]Diagnostic, error) {
 			Severity: SeverityError,
 		})
 	}
-	return diags, nil
+	return diags
 }
