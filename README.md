@@ -18,6 +18,8 @@ modex gives the model a local, searchable index of real documentation — the sa
 - **Full-text search** over stdlib + project dependency docs (FTS5, porter stemming)
 - **Background indexing** with progress tracking — no blocking the model
 - **Dedup** — packages with unchanged content/version are skipped on re-index
+- **Diagnostics orchestration** — build/outdated/security/modernize checks via one tool
+- **Modernization apply mode** — run `go fix` changes with dry-run support
 - **Transports** — stdio (for Claude Desktop / claude CLI) and HTTP/SSE
 - **Pure-Go SQLite** — no CGo, no system libraries required
 
@@ -25,15 +27,17 @@ modex gives the model a local, searchable index of real documentation — the sa
 
 | Tool | Description |
 |------|-------------|
+| `ping` | Health check — returns `pong`. |
 | `register_project` | Register a Go project directory for indexing. Validates `go.mod` exists and starts background indexing of stdlib + all project dependencies. |
 | `get_index_status` | Check indexing progress for a registered project. Returns phase, total/indexed/skipped/failed counts. |
-| `ping` | Health check — returns `pong`. |
+| `reindex_project` | Restart indexing for a registered project (cancels any active indexing first). |
+| `search_docs` | Search indexed docs with modes `auto`, `text`, `symbol`, or `fts5`, plus optional package/kind/parent filters. |
+| `get_diagnostics` | Run diagnostics on a project. Categories: `build`, `outdated`, `security`, `modernize` (all categories by default). |
+| `apply_modernize` | Apply `go fix` modernizations with optional selective fixers, `aggressive`, and `dry_run` modes. |
 
-## Prompts
+## Prompt Asset
 
-| Prompt | Description |
-|--------|-------------|
-| `coding_modern_go` | System prompt for writing modern, idiomatic Go 1.25+ code. Covers module layout, error handling, concurrency patterns, generics, and common pitfalls. |
+`prompts/coding_modern_go.md` contains a system prompt for writing modern, idiomatic Go code with modex.
 
 ## Installation
 
@@ -109,7 +113,20 @@ claude --mcp-server "modex:modex"
    get_index_status(project_path="/path/to/your/project")
    ```
 
-3. Once `phase` is `ready`, the model can search docs to verify APIs before using them (via MODEX-003 `search_docs` — coming soon).
+3. Once `phase` is `ready`, search docs before writing code:
+   ```
+   search_docs(query="bytes.Buffer.Write", mode="symbol")
+   ```
+
+4. Run diagnostics when needed:
+   ```
+   get_diagnostics(project_path="/path/to/your/project", categories=["build","security"])
+   ```
+
+5. Apply modernizations (or preview with `dry_run=true`):
+   ```
+   apply_modernize(project_path="/path/to/your/project", dry_run=true)
+   ```
 
 ## Architecture
 
@@ -152,14 +169,14 @@ go test ./internal/server/... -v
 
 - [x] MODEX-001: Core MCP server (ping, rate limiting, concurrency middleware)
 - [x] MODEX-002: Documentation indexing (SQLite FTS5, go/doc extraction, background indexer)
+- [x] MODEX-003: `search_docs` tool
+- [x] MODEX-004: `get_diagnostics` orchestrator
+- [x] MODEX-005: build diagnostics (via `get_diagnostics` category `build`)
+- [x] MODEX-006: outdated diagnostics (via `get_diagnostics` category `outdated`)
+- [x] MODEX-007: security diagnostics (via `get_diagnostics` category `security`)
+- [x] MODEX-008: modernize diagnostics (via `get_diagnostics` category `modernize`)
+- [x] MODEX-009: `apply_modernize`
 - [x] MODEX-010: `coding_modern_go` prompt
-- [ ] MODEX-003: `search_docs` tool
-- [ ] MODEX-004: `get_diagnostics` orchestrator
-- [ ] MODEX-005: `get_build_diagnostics`
-- [ ] MODEX-006: `get_outdated_diagnostics`
-- [ ] MODEX-007: `get_security_diagnostics`
-- [ ] MODEX-008: `get_modernize_diagnostics`
-- [ ] MODEX-009: `apply_modernize`
 
 ## License
 
