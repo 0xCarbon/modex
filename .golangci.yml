@@ -1,0 +1,22 @@
+version: "2"
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - staticcheck
+    - unused
+    - gosimple
+    - ineffassign
+    - typecheck
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+
+issues:
+  exclude-rules:
+    # Test files can ignore errcheck on deferred Close/Rollback
+    - path: "_test\\.go"
+      linters:
+        - errcheck
