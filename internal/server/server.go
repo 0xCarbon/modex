@@ -18,14 +18,21 @@ import (
 	"github.com/0xCarbon/modex/internal/db"
 	"github.com/0xCarbon/modex/internal/diagnostics"
 	"github.com/0xCarbon/modex/internal/docs"
+	"github.com/0xCarbon/modex/internal/logbuf"
 )
 
 const (
-	defaultRateLimitPerSecond   = 3 * 10
-	defaultRateLimitBurst       = defaultRateLimitPerSecond
-	defaultMaxConcurrentRequest = 1 << 6
-	defaultMaxProjects          = 32
+	DefaultRateLimitPerSecond = 30
+	DefaultMaxConcurrent      = 64
+	defaultMaxProjects        = 32
 )
+
+// Config holds tunable server parameters.
+type Config struct {
+	RateLimitPerSecond int
+	MaxConcurrent      int
+	LogBuffer          *logbuf.RingBuffer
+}
 
 // App holds server-wide state including the database and registered projects.
 type App struct {
@@ -268,7 +275,14 @@ func (app *App) applyModernizeHandler(ctx context.Context, _ *mcp.CallToolReques
 
 // New returns a configured MCP server with rate limiting, concurrency limiting,
 // and documentation indexing tools.
-func New(database *db.DB) *mcp.Server {
+func New(database *db.DB, cfg Config) *mcp.Server {
+	if cfg.RateLimitPerSecond <= 0 {
+		cfg.RateLimitPerSecond = DefaultRateLimitPerSecond
+	}
+	if cfg.MaxConcurrent <= 0 {
+		cfg.MaxConcurrent = DefaultMaxConcurrent
+	}
+
 	app := &App{
 		DB:       database,
 		projects: make(map[string]*ProjectState),
@@ -279,10 +293,10 @@ func New(database *db.DB) *mcp.Server {
 		&mcp.ServerOptions{Logger: slog.Default()},
 	)
 	s.AddReceivingMiddleware(rateLimitMiddleware(rate.NewLimiter(
-		rate.Every(time.Second/defaultRateLimitPerSecond),
-		defaultRateLimitBurst,
+		rate.Every(time.Second/time.Duration(cfg.RateLimitPerSecond)),
+		cfg.RateLimitPerSecond,
 	)))
-	s.AddReceivingMiddleware(concurrencyMiddleware(defaultMaxConcurrentRequest))
+	s.AddReceivingMiddleware(concurrencyMiddleware(cfg.MaxConcurrent))
 
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "ping",
@@ -332,6 +346,24 @@ func New(database *db.DB) *mcp.Server {
 		Name:        "apply_modernize",
 		Description: "Apply go fix modernizations to a Go project. Supports selective fixers, dry-run mode (returns diff without modifying files), and iterative convergence for synergistic fixes.",
 	}, app.applyModernizeHandler)
+
+	// Register modex://logs resource if a log buffer is provided.
+	if cfg.LogBuffer != nil {
+		s.AddResource(&mcp.Resource{
+			URI:         "modex://logs",
+			Name:        "logs",
+			Description: "Returns recent server log lines (ring buffer, last 500 entries).",
+			MIMEType:    "text/plain",
+		}, func(_ context.Context, _ *mcp.ReadResourceRequest) (*mcp.ReadResourceResult, error) {
+			return &mcp.ReadResourceResult{
+				Contents: []*mcp.ResourceContents{{
+					URI:      "modex://logs",
+					MIMEType: "text/plain",
+					Text:     cfg.LogBuffer.Lines(),
+				}},
+			}, nil
+		})
+	}
 
 	return s
 }

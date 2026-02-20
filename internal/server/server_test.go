@@ -25,7 +25,7 @@ func openTestDB(t *testing.T) *db.DB {
 
 func newServer(t *testing.T) *mcp.Server {
 	t.Helper()
-	return server.New(openTestDB(t))
+	return server.New(openTestDB(t), server.Config{})
 }
 
 func connect(t *testing.T, s *mcp.Server) (*mcp.ClientSession, func()) {

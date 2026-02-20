@@ -16,6 +16,6 @@ PLANREVIEW.md
 .geminiignore
 
 # Build output
-modex
+/modex
 # coder workflow artifacts
 .coder/

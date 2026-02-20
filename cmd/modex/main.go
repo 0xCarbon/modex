@@ -5,26 +5,80 @@ import (
 	"flag"
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/0xCarbon/modex/internal/db"
+	"github.com/0xCarbon/modex/internal/logbuf"
 	"github.com/0xCarbon/modex/internal/server"
 )
 
-func main() {
-	transport := flag.String("transport", "stdio", "transport to use: stdio or http")
-	addr := flag.String("addr", "127.0.0.1:3838", "address to listen on (http transport only)")
-	dbPath := flag.String("db", defaultDBPath(), "path to SQLite database")
-	flag.Parse()
+// version is set by goreleaser ldflags: -X main.version={{ .Version }}
+var version = "dev"
 
-	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, nil)))
+// Default values shared between main.go and service.go.
+const (
+	DefaultRateLimitPerSecond = 30
+	DefaultMaxConcurrent      = 64
+)
+
+func main() {
+	// Determine subcommand. Default is "server".
+	sub := "server"
+	args := os.Args[1:]
+	if len(args) > 0 && !strings.HasPrefix(args[0], "-") {
+		sub = args[0]
+		args = args[1:]
+	}
+
+	switch sub {
+	case "server":
+		cmdServer(args)
+	case "version":
+		fmt.Printf("modex %s\n", version)
+	case "setup":
+		cmdSetup()
+	case "update":
+		cmdUpdate(args)
+	case "install-service":
+		cmdInstallService(args)
+	case "remove-service":
+		cmdRemoveService(args)
+	default:
+		fmt.Fprintf(os.Stderr, "unknown command %q\n", sub)
+		fmt.Fprintf(os.Stderr, "usage: modex [server|version|setup|update|install-service|remove-service]\n")
+		os.Exit(1)
+	}
+}
+
+func cmdServer(args []string) {
+	fs := flag.NewFlagSet("server", flag.ExitOnError)
+	transport := fs.String("transport", "http", "transport: http or stdio")
+	addr := fs.String("addr", "127.0.0.1:3838", "address to listen on (http transport only)")
+	dbPath := fs.String("db", defaultDBPath(), "path to SQLite database")
+	rateLimit := fs.Int("rate-limit", DefaultRateLimitPerSecond, "max requests per second")
+	maxConcurrent := fs.Int("max-concurrent", DefaultMaxConcurrent, "max concurrent requests")
+	fs.Parse(args)
+
+	// Set up log buffer + handler.
+	logBuf := logbuf.NewRingBuffer(500)
+	slog.SetDefault(slog.New(logbuf.NewHandler(logBuf)))
+
+	// Warn on non-loopback binding.
+	if *transport == "http" {
+		host, _, err := net.SplitHostPort(*addr)
+		if err == nil && !isLoopback(host) {
+			slog.Warn("binding to non-loopback address without authentication", "addr", *addr)
+		}
+	}
 
 	// Ensure DB directory exists.
 	if err := os.MkdirAll(filepath.Dir(*dbPath), 0o755); err != nil {
@@ -39,7 +93,11 @@ func main() {
 	}
 	defer database.Close()
 
-	s := server.New(database)
+	s := server.New(database, server.Config{
+		RateLimitPerSecond: *rateLimit,
+		MaxConcurrent:      *maxConcurrent,
+		LogBuffer:          logBuf,
+	})
 
 	switch *transport {
 	case "stdio":
