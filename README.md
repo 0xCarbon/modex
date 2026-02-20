@@ -20,7 +20,7 @@ modex gives the model a local, searchable index of real documentation — the sa
 - **Dedup** — packages with unchanged content/version are skipped on re-index
 - **Diagnostics orchestration** — build/outdated/security/modernize checks via one tool
 - **Modernization apply mode** — run `go fix` changes with dry-run support
-- **Transports** — stdio (for Claude Desktop / claude CLI) and HTTP/SSE
+- **Transports** — stdio and streamable HTTP (recommended: run as persistent HTTP service)
 - **Pure-Go SQLite** — no CGo, no system libraries required
 
 ## Tools
@@ -43,32 +43,38 @@ modex gives the model a local, searchable index of real documentation — the sa
 
 **Prerequisites:** Go 1.26+ (modex uses `go fix` modernizers added in 1.26; it can index projects built with any Go version)
 
-```bash
-go install github.com/0xCarbon/modex/cmd/modex@latest
-```
-
-Or build from source:
+Build from source:
 
 ```bash
 git clone https://github.com/0xCarbon/modex
 cd modex
-go build ./cmd/modex
+go build -o modex ./cmd/modex
+```
+
+Or install directly:
+
+```bash
+go install github.com/0xCarbon/modex/cmd/modex@latest
 ```
 
 ## Usage
 
-### stdio transport (claude CLI / Claude Desktop)
+modex is designed to run as a persistent HTTP service — start it once and connect from any number of Claude sessions.
 
-```bash
-modex
-# or explicitly:
-modex --transport stdio
-```
-
-### HTTP transport
+### Start the server
 
 ```bash
 modex --transport http --addr 127.0.0.1:3838
+```
+
+The MCP endpoint is served at the root path, e.g. `http://127.0.0.1:3838/mcp`.
+
+### stdio transport
+
+For single-session use (e.g. Claude Desktop on macOS/Windows):
+
+```bash
+modex --transport stdio
 ```
 
 ### Database location
@@ -79,9 +85,30 @@ The index is stored at `~/.cache/modex/modex.db` by default. Override with `--db
 modex --db /path/to/modex.db
 ```
 
+## Claude Code configuration
+
+Add modex as a global MCP server so it's available in every project:
+
+```bash
+claude mcp add --transport http modex http://127.0.0.1:3838/mcp
+```
+
+Or edit `~/.claude.json` directly — add to the top-level `mcpServers`:
+
+```json
+{
+  "mcpServers": {
+    "modex": {
+      "type": "http",
+      "url": "http://127.0.0.1:3838/mcp"
+    }
+  }
+}
+```
+
 ## Claude Desktop configuration
 
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+For stdio transport, add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
 
 ```json
 {
@@ -91,14 +118,6 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
     }
   }
 }
-```
-
-## Claude CLI configuration
-
-Add to your MCP settings or run directly:
-
-```bash
-claude --mcp-server "modex:modex"
 ```
 
 ## Workflow
@@ -134,8 +153,9 @@ claude --mcp-server "modex:modex"
 cmd/modex/          main entry point, flag parsing, transport setup
 internal/
   db/               SQLite wrapper, FTS5 schema, auto-sync triggers
+  diagnostics/      build, outdated, security, modernize orchestration
   docs/             go/doc extraction, background indexer, progress tracking
-  server/           MCP server, middleware, tool handlers
+  server/           MCP server, tool handlers
 prompts/            coding_modern_go.md system prompt
 ```
 

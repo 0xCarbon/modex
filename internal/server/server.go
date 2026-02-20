@@ -312,6 +312,20 @@ func New(database *db.DB) *mcp.Server {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "search_docs",
 		Description: "Search indexed Go documentation using full-text search. Supports auto/text/symbol/fts5 query modes and filtering by package, kind, and parent type. Returns ranked results with signatures and doc strings.",
+		InputSchema: json.RawMessage(`{
+			"type": "object",
+			"properties": {
+				"query": {"type": "string", "description": "Search query string"},
+				"mode": {"type": "string", "description": "Query parser mode. auto (default): detects symbol paths via dots (e.g. sync.Mutex). text: tokenize + prefix match. symbol: exact symbol name match. fts5: raw FTS5 query passed directly to SQLite MATCH. FTS5 columns: package_path, item_name (3x BM25), parent_name (2x), signature (1.5x), doc_text. Tokenizer: porter unicode61. Syntax: col : term, \"phrase\", OR, NOT, prefix*, NEAR(a b, N)."},
+				"packages": {"type": ["null","array"], "items": {"type": "string"}, "description": "Filter results to these package paths (e.g. [\"net/http\", \"context\"])"},
+				"kinds": {"type": ["null","array"], "items": {"type": "string"}, "description": "Filter by item kind: Function, Method, Type, Const, Var"},
+				"parent": {"type": "string", "description": "Filter methods/fields by parent type name (e.g. \"Server\", \"HashMap\")"},
+				"limit": {"type": "integer", "description": "Max results to return (default 10)"},
+				"offset": {"type": "integer", "description": "Pagination offset"}
+			},
+			"required": ["query"],
+			"additionalProperties": false
+		}`),
 	}, app.searchDocsHandler)
 
 	mcp.AddTool(s, &mcp.Tool{
